@@ -1,0 +1,56 @@
+{
+    "name": "RPPG_TDM_TALOS",
+    "n_gpu": 0,
+
+    "arch": {
+        "type": "Model",
+        "args": {}
+    },
+    "train_dataloader": {
+        "type": "UBFCDataloader",
+        "args":{
+            "data_dir": "/media/pxierra/4ddb33c4-42d9-4544-b7b4-796994f061ce/data/pluse/UBFC/TS_CAN_rPPG_input/DATASET_2_PTH/train",
+            "batch_size": 64,
+            "shuffle": true,
+            "num_workers": 4
+        }
+    },
+    "val_dataloader": {
+        "type": "UBFCDataloader",
+        "args":{
+            "data_dir": "/media/pxierra/4ddb33c4-42d9-4544-b7b4-796994f061ce/data/pluse/UBFC/TS_CAN_rPPG_input/DATASET_2_PTH/val",
+            "batch_size": 64,
+            "shuffle": true,
+            "num_workers": 4
+        }
+    },
+    "optimizer": {
+        "type": "Adam",
+        "args":{
+            "lr": 0.001,
+            "weight_decay": 0,
+            "amsgrad": true
+        }
+    },
+    "loss": "MSELoss",
+    "metrics": [],
+    "lr_scheduler": {
+        "type": "StepLR",
+        "args": {
+            "step_size": 20,
+            "gamma": 0.3
+        }
+    },
+    "trainer": {
+        "epochs": 200,
+
+        "save_dir": "saved/",
+        "save_period": 1,
+        "verbosity": 2,
+
+        "monitor": "min val_loss",
+        "early_stop": 10,
+
+        "tensorboard": false
+    }
+}

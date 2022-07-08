@@ -1,6 +1,16 @@
 import cv2
 import torch
 import os
+from skimage.util import img_as_float
+from scipy.signal import butter, filtfilt
+
+
+def img_process(img):
+    vidLxL = img_as_float(img[:, :, :])  # img_as_float是将图像除以255,变为float型
+    vidLxL = vidLxL.astype('float32')
+    vidLxL[vidLxL > 1] = 1  # 把数据归一化到1/255～1之间
+    vidLxL[vidLxL < (1 / 255)] = 1 / 255  # 把数据归一化到1/255～1之间
+    return vidLxL
 
 
 def process_face_frame(path_to_png, path_to_gt, path_to_save, subject):
@@ -11,9 +21,13 @@ def process_face_frame(path_to_png, path_to_gt, path_to_save, subject):
         save_path = os.path.join(path_to_save, 'val')
 
     # get GT label
+    fps = 30
     with open(path_to_gt) as f:
         gt = f.readlines()
         gtTrace = gt[0].split()
+        list_ppg = [float(i) for i in gtTrace]
+        [b_pulse, a_pulse] = butter(1, [0.75 / fps * 2, 2.5 / fps * 2], btype='bandpass')
+        float_label = filtfilt(b_pulse, a_pulse, list_ppg)
     f.close()
 
     # save data
@@ -29,12 +43,13 @@ def process_face_frame(path_to_png, path_to_gt, path_to_save, subject):
         for j in range(i*240, i*239+240):
             png_path = os.path.join(path_to_png, pngs[j])
             temp_face = cv2.imread(png_path)
+            temp_face = img_process(temp_face)
             # numpy to tensor
             temp_face = torch.from_numpy(temp_face)
             # (H,W,C) -> (C,H,W)
             temp_face = torch.permute(temp_face, (2, 0, 1))
             segment_face[j-i*240, :, :, :] = temp_face
-            segment_label[j-i*240] = float(gtTrace[j])
+            segment_label[j-i*240] = float_label[j]
         save_pth_path = save_path + '/' + subject + '_' + str(i) + '.pth'
         data['face'] = segment_face
         # normlized wave

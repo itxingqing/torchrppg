@@ -20,17 +20,22 @@ class SpatialEncoder(nn.Module):
         self.pool2 = nn.AvgPool2d(kernel_size=(2, 2), stride=(2, 2))
 
     def forward(self, x):
+        B, T, C, H, W = x.size()
         # (B, T, 3, 128, 128) -> (B, T, 16, 128, 128)
+        x = torch.reshape(x, (B*T, C, H, W))
         x = self.conv1(x)
-        # (T, 16, 128, 128) -> (T, 16, 64, 64)
+        # (B*T, 16, 128, 128) -> (B*T, 16, 64, 64)
         x = self.pool1(x)
-        # (T, 16, 64, 64) -> (T, 32, 64, 64)
+        # (B*T, 16, 64, 64) -> (B*T, 32, 64, 64)
         x = self.conv2(x)
-        # (T, 32, 64, 64) -> (T, 32, 32, 32)
+        # (B*T, 32, 64, 64) -> (B*T, 32, 32, 32)
         x = self.pool2(x)
+        _, C, H, W = x.size()
+        x = torch.reshape(x, (B, T, C, H, W))
         return x
 
+
 # model = SpatialEncoder()
-# x = torch.randn((256, 3, 128, 128))
+# x = torch.randn((16, 256, 3, 128, 128))
 # y = model(x)
 # print(y.size())

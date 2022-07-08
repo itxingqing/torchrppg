@@ -15,15 +15,15 @@ class DTC(nn.Module):
         self.conv1d.weight.requires_grad = False
 
     def forward(self, x):
-        T, C, H, W = x.size()
-        # x:(T, C, H, W) -> (H, W, C, T)
-        x = torch.permute(x, (2, 3, 1, 0))
-        # x:(H, W, C, T) -> (HxW, C, T)
-        x = torch.reshape(x, (H*W, C, T))
+        B, T, C, H, W = x.size()
+        # x:(B, T, C, H, W) -> (B, H, W, C, T)
+        x = torch.permute(x, (0, 3, 4, 2, 1))
+        # x:(B, H, W, C, T) -> (B*HxW, C, T)
+        x = torch.reshape(x, (B*H*W, C, T))
         output = self.conv1d(x)
-        output = torch.reshape(output, (H, W, C, T))
-        # x:(H, W, C, T)->(T, C, H, W)
-        output = torch.permute(output, (3, 2, 0, 1))
+        output = torch.reshape(output, (B, H, W, C, T))
+        # x:(B, H, W, C, T)->(B, T, C, H, W)
+        output = torch.permute(output, (0, 4, 3, 1, 2))
         return output
 
 
@@ -38,13 +38,13 @@ class TDM(nn.Module):
         output = x
         for i in range(1, self.number):
             x = self.tdm(x)
-            # x:(T, C, H, W)->(T, C*N, H, W)
-            output = torch.cat((output, x), dim=1)
+            # x:(B, T, C, H, W)->(B, T, C*N, H, W)
+            output = torch.cat((output, x), dim=2)
         return output
 
 
 # m = TDM(3)
-# input = torch.randn(256, 32, 32, 32)
+# input = torch.randn(16, 256, 32, 32, 32)
 # output = m(input)
 # print(output.size())
 

@@ -1,5 +1,6 @@
 import torch
 import argparse
+import numpy as np
 import collections
 import losses.loss as module_loss
 import models.model as module_arch
@@ -7,6 +8,13 @@ from parse_config import ConfigParser
 import data_loaders.data_loaders as module_data
 import metrices.metric as module_metric
 from trainer import Trainer
+
+# fix random seeds for reproducibility
+SEED = 123
+torch.manual_seed(SEED)
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
+np.random.seed(SEED)
 
 
 def main(config):
@@ -40,18 +48,18 @@ def main(config):
 
 if __name__ == '__main__':
     args = argparse.ArgumentParser(description='PyTorch Template')
-    args.add_argument('-c', '--config', default=None, type=str,
+    args.add_argument('-c', '--config', default='config.json', type=str,
                       help='config file path (default: None)')
     args.add_argument('-r', '--resume', default=None, type=str,
                       help='path to latest checkpoint (default: None)')
-    args.add_argument('-d', '--device', default=None, type=str,
+    args.add_argument('-d', '--device', default='0', type=str,
                       help='indices of GPUs to enable (default: all)')
 
     # custom cli options to modify configuration from default values given in json file.
     CustomArgs = collections.namedtuple('CustomArgs', 'flags type target')
     options = [
         CustomArgs(['--lr', '--learning_rate'], type=float, target='optimizer;args;lr'),
-        CustomArgs(['--bs', '--batch_size'], type=int, target='data_loader;args;batch_size')
+        CustomArgs(['--bs', '--batch_size'], type=int, target='train_dataloader;args;batch_size')
     ]
     train_config = ConfigParser.from_args(args, options)
     main(train_config)

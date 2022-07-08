@@ -16,7 +16,8 @@ class UBFCDataset(Dataset):
         return len(os.listdir(self.data_dir))
 
     def __getitem__(self, idx):
-        data = torch.load(self.pth_data[idx])
+        path = os.path.join(self.data_dir, self.pth_data[idx])
+        data = torch.load(path)
         face_frames = data['face']
         gt_label = data['wave']
         return face_frames, gt_label

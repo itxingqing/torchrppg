@@ -2,7 +2,8 @@ import cv2
 import torch
 import os
 from skimage.util import img_as_float
-from scipy.signal import butter, filtfilt
+import numpy as np
+from scipy.signal import butter, filtfilt, detrend
 
 
 def img_process(img):
@@ -16,18 +17,19 @@ def img_process(img):
 def process_face_frame(path_to_png, path_to_gt, path_to_save, subject):
     # split train and val
     if int(subject[-2:]) in [1, 4, 5, 8, 9, 10, 11, 12, 13]:
-        save_path = os.path.join(path_to_save, 'train')
-    else:
         save_path = os.path.join(path_to_save, 'val')
+    else:
+        save_path = os.path.join(path_to_save, 'train')
 
     # get GT label
     fps = 30
     with open(path_to_gt) as f:
         gt = f.readlines()
         gtTrace = gt[0].split()
-        list_ppg = [float(i) for i in gtTrace]
-        [b_pulse, a_pulse] = butter(1, [0.75 / fps * 2, 2.5 / fps * 2], btype='bandpass')
-        float_label = filtfilt(b_pulse, a_pulse, list_ppg)
+        float_label = [float(i) for i in gtTrace]
+        float_label = detrend(float_label)
+        [b_pulse, a_pulse] = butter(3, [0.75 / fps * 2, 2.5 / fps * 2], btype='bandpass')
+        float_label = filtfilt(b_pulse, a_pulse, float_label)
     f.close()
 
     # save data

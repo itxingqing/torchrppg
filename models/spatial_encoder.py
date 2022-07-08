@@ -21,14 +21,14 @@ class SpatialEncoder(nn.Module):
 
     def forward(self, x):
         B, T, C, H, W = x.size()
-        # (B, T, 3, 128, 128) -> (B, T, 16, 128, 128)
+        # (B, T, 3, 36, 36) -> (B, T, 16, 36, 36)
         x = torch.reshape(x, (B*T, C, H, W))
         x = self.conv1(x)
-        # (B*T, 16, 128, 128) -> (B*T, 16, 64, 64)
+        # (B*T, 16, 36, 36) -> (B*T, 16, 18, 18)
         x = self.pool1(x)
-        # (B*T, 16, 64, 64) -> (B*T, 32, 64, 64)
+        # (B*T, 16, 18, 18) -> (B*T, 32, 18, 18)
         x = self.conv2(x)
-        # (B*T, 32, 64, 64) -> (B*T, 32, 32, 32)
+        # (B*T, 32, 18, 18) -> (B*T, 32, 9, 9)
         x = self.pool2(x)
         _, C, H, W = x.size()
         x = torch.reshape(x, (B, T, C, H, W))

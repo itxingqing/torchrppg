@@ -4,6 +4,7 @@ import os
 from skimage.util import img_as_float
 import numpy as np
 from scipy.signal import butter, filtfilt, detrend
+import matplotlib.pyplot as plt
 
 
 def img_process(img):
@@ -27,9 +28,6 @@ def process_face_frame(path_to_png, path_to_gt, path_to_save, subject):
         gt = f.readlines()
         gtTrace = gt[0].split()
         float_label = [float(i) for i in gtTrace]
-        float_label = detrend(float_label)
-        [b_pulse, a_pulse] = butter(3, [0.75 / fps * 2, 2.5 / fps * 2], btype='bandpass')
-        float_label = filtfilt(b_pulse, a_pulse, float_label)
     f.close()
 
     # save data
@@ -41,7 +39,8 @@ def process_face_frame(path_to_png, path_to_gt, path_to_save, subject):
     for i in range(n_segment):
         data = {}
         segment_face = torch.zeros(segment_length, 3, 36, 36)
-        segment_label = torch.zeros(segment_length)
+        segment_label = torch.zeros(segment_length, dtype=torch.float32)
+        float_label_detrend = np.zeros(segment_length, dtype=float)
         for j in range(i*240, i*239+240):
             png_path = os.path.join(path_to_png, pngs[j])
             temp_face = cv2.imread(png_path)
@@ -51,11 +50,22 @@ def process_face_frame(path_to_png, path_to_gt, path_to_save, subject):
             # (H,W,C) -> (C,H,W)
             temp_face = torch.permute(temp_face, (2, 0, 1))
             segment_face[j-i*240, :, :, :] = temp_face
-            segment_label[j-i*240] = float_label[j]
+            float_label_detrend[j-i*240] = float_label[j]
         save_pth_path = save_path + '/' + subject + '_' + str(i) + '.pth'
         data['face'] = segment_face
         # normlized wave
-        data['wave'] = (segment_label - torch.mean(segment_label)) / torch.std(segment_label)
+        float_label_detrend = detrend(float_label_detrend, type == 'linear')
+        [b_pulse, a_pulse] = butter(3, [0.75 / fps * 2, 2.5 / fps * 2], btype='bandpass')
+        float_label_detrend = filtfilt(b_pulse, a_pulse, float_label_detrend)
+        segment_label = torch.from_numpy(float_label_detrend.copy()).float()
+        d_max = segment_label.max()
+        d_min = segment_label.min()
+        segment_label = torch.sub(segment_label, d_min).true_divide(d_max-d_min)
+        segment_label = (segment_label - 0.5).true_divide(0.5)
+        data['wave'] = segment_label
+        # plt.plot(segment_label[:].detach().numpy(), '--')
+        # plt.show()
+
         torch.save(data, save_pth_path)
 
 

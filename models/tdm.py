@@ -13,6 +13,9 @@ class DTC(nn.Module):
         t5 = 2 * torch.ones(32, 32, 1)
         self.conv1d.weight.data = torch.cat((t1, t2, t3, t4, t5), dim=2)
         self.conv1d.weight.requires_grad = False
+        self.tanh = nn.Tanh()
+        self.bn = nn.BatchNorm2d(32)
+        self.dp = nn.Dropout(p=0.5)
 
     def forward(self, x):
         B, T, C, H, W = x.size()
@@ -21,9 +24,17 @@ class DTC(nn.Module):
         # x:(B, H, W, C, T) -> (B*HxW, C, T)
         x = torch.reshape(x, (B*H*W, C, T))
         output = self.conv1d(x)
+        # x:(B*HxW, C, T) -> (B, H, W, C, T)
         output = torch.reshape(output, (B, H, W, C, T))
-        # x:(B, H, W, C, T)->(B, T, C, H, W)
+        # x:(B, H, W, C, T) -> (B, T, C, H, W)
         output = torch.permute(output, (0, 4, 3, 1, 2))
+        # x:(B, T, C, H, W)-> (B*T, C, H, W)
+        output = torch.reshape(output, (B*T, C, H, W))
+        output = self.tanh(output)
+        output = self.bn(output)
+        output = self.dp(output)
+        # x:(B*T, C, H, W)-> (B, T, C, H, W)
+        output = torch.reshape(output, (B, T, C, H, W))
         return output
 
 

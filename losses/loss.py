@@ -19,10 +19,12 @@ class MSELoss(nn.Module):
 
     def forward(self, y, y_hat):
         oup = self.mse(y, y_hat)
-
-        # # plt.plot(y[0, 10:200].detach().numpy(), '-')
-        # plt.plot(y_hat[0, 10:200].detach().numpy(), '--')
-        # plt.show()
+        # fig = plt.figure(1)
+        # plt.plot(y[0, :].detach().numpy(), '-')
+        # plt.plot(y_hat[0, :].detach().numpy(), '--')
+        # plt.draw()
+        # plt.pause(0.5)
+        # plt.close(fig)
         return oup
 
 

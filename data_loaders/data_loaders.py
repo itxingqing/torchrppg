@@ -24,7 +24,7 @@ class UBFCDataset(Dataset):
 
 
 class UBFCDataloader(DataLoader):
-    def __init__(self, data_dir, batch_size=32, num_workers=4, shuffle=True):
+    def __init__(self, data_dir, batch_size=32, num_workers=4, shuffle=True, drop_last=True):
         self.dataset = UBFCDataset(data_dir)
-        super(UBFCDataloader, self).__init__(self.dataset, batch_size=batch_size, num_workers=num_workers, shuffle=shuffle)
+        super(UBFCDataloader, self).__init__(self.dataset, batch_size=batch_size, num_workers=num_workers, shuffle=shuffle, drop_last=drop_last)
 

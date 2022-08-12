@@ -19,12 +19,12 @@ class MSELoss(nn.Module):
 
     def forward(self, y, y_hat):
         oup = self.mse(y, y_hat)
-        # fig = plt.figure(1)
-        # plt.plot(y[0, :].detach().numpy(), '-')
-        # plt.plot(y_hat[0, :].detach().numpy(), '--')
-        # plt.draw()
-        # plt.pause(0.5)
-        # plt.close(fig)
+        fig = plt.figure(1)
+        plt.plot(y[0, :200].cpu().detach().numpy(), '-')
+        plt.plot(y_hat[0, :200].cpu().detach().numpy(), '--')
+        plt.draw()
+        plt.pause(2)
+        plt.close(fig)
         return oup
 
 
@@ -35,9 +35,11 @@ class MAELoss(nn.Module):
 
     def forward(self, y, y_hat):
         oup = self.mae(y, y_hat)
-
+        # fig = plt.figure(1)
         # plt.plot(y[0, :].detach().numpy(), '-')
         # plt.plot(y_hat[0, :].detach().numpy(), '--')
-        # plt.show()
+        # plt.draw()
+        # plt.pause(0.5)
+        # plt.close(fig)
         return oup
 

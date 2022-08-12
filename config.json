@@ -1,6 +1,6 @@
 {
     "name": "RPPG_TDM_TALOS",
-    "n_gpu": 0,
+    "n_gpu": 2,
 
     "arch": {
         "type": "Model",
@@ -9,25 +9,27 @@
     "train_dataloader": {
         "type": "UBFCDataloader",
         "args":{
-            "data_dir": "/media/pxierra/4ddb33c4-42d9-4544-b7b4-796994f061ce/data/pluse/UBFC/TS_CAN_rPPG_input/DATASET_2_PTH/train",
-            "batch_size": 16,
+            "data_dir": "/media/pxierra/e70ff8ce-d5d4-4f52-aa2b-921ff250e5fc/P-VHRD-PTH/train",
+            "batch_size": 8,
             "shuffle": true,
-            "num_workers": 4
+            "num_workers": 4,
+            "drop_last": true
         }
     },
     "val_dataloader": {
         "type": "UBFCDataloader",
         "args":{
-            "data_dir": "/media/pxierra/4ddb33c4-42d9-4544-b7b4-796994f061ce/data/pluse/UBFC/TS_CAN_rPPG_input/DATASET_2_PTH/val",
+            "data_dir": "/media/pxierra/e70ff8ce-d5d4-4f52-aa2b-921ff250e5fc/P-VHRD-PTH/val",
             "batch_size": 64,
             "shuffle": true,
-            "num_workers": 4
+            "num_workers": 4,
+            "drop_last": true
         }
     },
     "optimizer": {
         "type": "Adam",
         "args":{
-            "lr": 0.01,
+            "lr": 0.0001,
             "weight_decay": 0,
             "amsgrad": true
         }

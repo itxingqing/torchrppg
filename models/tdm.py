@@ -13,8 +13,8 @@ class DTC(nn.Module):
         t5 = 2 * torch.ones(32, 32, 1)
         self.conv1d.weight.data = torch.cat((t1, t2, t3, t4, t5), dim=2)
         self.conv1d.weight.requires_grad = False
-        self.tanh = nn.Tanh()
         self.bn = nn.BatchNorm2d(32)
+        self.tanh = nn.Tanh()
         self.dp = nn.Dropout(p=0.5)
 
     def forward(self, x):
@@ -55,7 +55,7 @@ class TDM(nn.Module):
 
 
 # m = TDM(3)
-# input = torch.randn(16, 256, 32, 32, 32)
+# input = torch.randn(16, 256, 64, 24, 24)
 # output = m(input)
 # print(output.size())
 

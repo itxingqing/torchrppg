@@ -11,6 +11,15 @@ class ConvTanhBN(nn.Sequential):
         )
 
 
+class ConvBNTanh(nn.Sequential):
+    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1, groups=1):
+        super(ConvBNTanh, self).__init__(
+            nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding, groups=groups, bias=False),
+            nn.BatchNorm2d(out_channels, momentum=0.1),
+            nn.ReLU(),
+        )
+
+
 class SpatialEncoder(nn.Module):
     def __init__(self):
         super(SpatialEncoder, self).__init__()
@@ -21,14 +30,14 @@ class SpatialEncoder(nn.Module):
 
     def forward(self, x):
         B, T, C, H, W = x.size()
-        # (B, T, 3, 36, 36) -> (B, T, 16, 36, 36)
+        # (B, T, 3, 96, 96) -> (B, T, 16, 96, 96)
         x = torch.reshape(x, (B*T, C, H, W))
         x = self.conv1(x)
-        # (B*T, 16, 36, 36) -> (B*T, 16, 18, 18)
+        # (B*T, 16, 96, 96) -> (B*T, 16, 48, 48)
         x = self.pool1(x)
-        # (B*T, 16, 18, 18) -> (B*T, 32, 18, 18)
+        # (B*T, 16, 48, 48) -> (B*T, 32, 48, 48)
         x = self.conv2(x)
-        # (B*T, 32, 18, 18) -> (B*T, 32, 9, 9)
+        # (B*T, 32, 48, 48) -> (B*T, 32, 24, 24)
         x = self.pool2(x)
         _, C, H, W = x.size()
         x = torch.reshape(x, (B, T, C, H, W))
@@ -36,6 +45,7 @@ class SpatialEncoder(nn.Module):
 
 
 # model = SpatialEncoder()
-# x = torch.randn((16, 256, 3, 128, 128))
-# y = model(x)
+# x = torch.randn((16, 256, 3, 96, 96))
+# x.cuda()
+# y = model(x).cuda()
 # print(y.size())

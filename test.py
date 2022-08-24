@@ -3,8 +3,8 @@ from models.model import Model
 import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
-    data_path = '/media/pxierra/e70ff8ce-d5d4-4f52-aa2b-921ff250e5fc/P-VHRD-PTH/val/p9v2_2.pth'
-    model_path = '/media/pxierra/4ddb33c4-42d9-4544-b7b4-796994f061ce/xiongzhuang/1-PycharmProjects/rppg_tdm_talos/saved/models/RPPG_TDM_TALOS/0812_163029/checkpoint-epoch13.pth'
+    data_path = '/media/pxierra/e70ff8ce-d5d4-4f52-aa2b-921ff250e5fc/P-VHRD-PTH/val/p10v2_3.pth'
+    model_path = '/media/pxierra/4ddb33c4-42d9-4544-b7b4-796994f061ce/xiongzhuang/1-PycharmProjects/rppg_tdm_talos/saved/models/RPPG_TDM_TALOS/0819_173234/checkpoint-epoch41.pth'
     # load model
     model = Model()
     model = model.to('cuda:0')
@@ -16,7 +16,7 @@ if __name__ == '__main__':
     data = torch.load(data_path)
     input = data['face']
     input = torch.unsqueeze(input, dim=0)
-    gt = data['wave']
+    gt, subject = data['wave']
     gt = torch.unsqueeze(gt, dim=0)
     # inference
     ouput = model(input)

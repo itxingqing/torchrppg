@@ -20,13 +20,13 @@
         "type": "UBFCDataloader",
         "args":{
             "data_dir": "/media/pxierra/e70ff8ce-d5d4-4f52-aa2b-921ff250e5fc/P-VHRD-PTH/val",
-            "batch_size": 64,
+            "batch_size": 8,
             "shuffle": true,
             "num_workers": 4,
             "drop_last": true
         }
     },
-    "optimizer": {
+    "optimizer1": {
         "type": "Adam",
         "args":{
             "lr": 0.0001,
@@ -34,8 +34,16 @@
             "amsgrad": true
         }
     },
+    "optimizer2": {
+        "type": "Adam",
+        "args":{
+            "lr": 1,
+            "weight_decay": 0,
+            "amsgrad": true
+        }
+    },
     "loss": {
-        "type": "MSELoss",
+        "type": "Talos",
         "args": []
     },
     "metrics": [],

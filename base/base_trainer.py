@@ -131,7 +131,8 @@ class BaseTrainer:
             'arch': arch,
             'epoch': epoch,
             'state_dict': self.model.state_dict(),
-            'optimizer': self.optimizer.state_dict(),
+            'optimizer1': self.optimizer[0].state_dict(),
+            'optimizer2': self.optimizer[1].state_dict(),
             'monitor_best': self.mnt_best,
             'config': self.config
         }
@@ -162,10 +163,11 @@ class BaseTrainer:
         self.model.load_state_dict(checkpoint['state_dict'])
 
         # load optimizer state from checkpoint only when optimizer type is not changed.
-        if checkpoint['config']['optimizer']['type'] != self.config['optimizer']['type']:
+        if checkpoint['config']['optimizer1']['type'] != self.config['optimizer1']['type']:
             self.logger.warning("Warning: Optimizer type given in config file is different from that of checkpoint. "
                                 "Optimizer parameters not being resumed.")
         else:
-            self.optimizer.load_state_dict(checkpoint['optimizer'])
+            self.optimizer[0].load_state_dict(checkpoint['optimizer1'])
+            self.optimizer[1].load_state_dict(checkpoint['optimizer2'])
 
         self.logger.info("Checkpoint loaded. Resume training from epoch {}".format(self.start_epoch))

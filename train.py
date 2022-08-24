@@ -34,16 +34,19 @@ def main(config):
     logger.info(model)
 
     # Set optimizer
-    trainable_params = filter(lambda p: p.requires_grad, model.parameters())
-    optimizer = config.init_obj('optimizer', torch.optim, trainable_params)
-    lr_scheduler = config.init_obj('lr_scheduler', torch.optim.lr_scheduler, optimizer)
+    trainable_params1 = filter(lambda p: p.requires_grad, model.parameters())
+    trainable_params2 = filter(lambda p: p.requires_grad, [criterion.thea_s])
+    optimizer1 = config.init_obj('optimizer1', torch.optim, trainable_params1)
+    optimizer2 = config.init_obj('optimizer2', torch.optim, trainable_params2)
+    lr_scheduler1 = config.init_obj('lr_scheduler', torch.optim.lr_scheduler, optimizer1)
+    lr_scheduler2 = config.init_obj('lr_scheduler', torch.optim.lr_scheduler, optimizer2)
 
     # Set Trainer
-    trainer = Trainer(model, criterion, metrics, optimizer,
+    trainer = Trainer(model, criterion, metrics, [optimizer1, optimizer2],
                       config=config,
                       data_loader=train_dataloader,
                       valid_data_loader=val_dataloader,
-                      lr_scheduler=lr_scheduler)
+                      lr_scheduler=[lr_scheduler1, lr_scheduler2])
     trainer.train()
 
 

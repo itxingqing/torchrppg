@@ -3,8 +3,8 @@ from models.model import Model
 import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
-    data_path = '/media/pxierra/e70ff8ce-d5d4-4f52-aa2b-921ff250e5fc/P-VHRD-PTH/val/p10v2_3.pth'
-    model_path = '/media/pxierra/4ddb33c4-42d9-4544-b7b4-796994f061ce/xiongzhuang/1-PycharmProjects/rppg_tdm_talos/saved/models/RPPG_TDM_TALOS/0819_173234/checkpoint-epoch41.pth'
+    data_path = '/media/pxierra/e70ff8ce-d5d4-4f52-aa2b-921ff250e5fc/P-VHRD-PTH/train/p2v5_0.pth'
+    model_path = '/media/pxierra/4ddb33c4-42d9-4544-b7b4-796994f061ce/xiongzhuang/1-PycharmProjects/rppg_tdm_talos/saved/models/RPPG_TDM_TALOS/0824_125315_TALOS_UBFC/checkpoint-epoch59.pth'
     # load model
     model = Model()
     model = model.to('cuda:0')

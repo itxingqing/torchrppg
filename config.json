@@ -1,5 +1,5 @@
 {
-    "name": "RPPG_TDM_TALOS",
+    "name": "RPPG_TDM_MSELoss",
     "n_gpu": 2,
 
     "arch": {
@@ -43,8 +43,10 @@
         }
     },
     "loss": {
-        "type": "Talos",
-        "args": []
+        "type": "MSELoss",
+        "args": {
+            "subject_number": 10
+        }
     },
     "metrics": [],
     "lr_scheduler": {

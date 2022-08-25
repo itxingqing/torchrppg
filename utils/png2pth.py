@@ -62,7 +62,7 @@ def process_face_frame(path_to_png, path_to_gt, path_to_save, subject):
         d_min = segment_label.min()
         segment_label = torch.sub(segment_label, d_min).true_divide(d_max-d_min)
         segment_label = (segment_label - 0.5).true_divide(0.5)
-        data['wave'] = segment_label
+        data['wave'] = (segment_label, int(subject[-2:]))
         # plt.plot(segment_label[:].detach().numpy(), '--')
         # plt.show()
 

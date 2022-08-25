@@ -40,14 +40,13 @@ class Trainer(BaseTrainer):
         self.train_metrics.reset()
         for batch_idx, (data, target, subject) in enumerate(self.data_loader):
             data, target, subject = data.to(self.device), target.to(self.device), subject.to(self.device)
-
-            self.optimizer[0].zero_grad()
-            self.optimizer[1].zero_grad()
+            for op in self.optimizer:
+                op.zero_grad()
             output = self.model(data)
             loss = self.criterion(output, target, subject)
             loss.backward(retain_graph=True)
-            self.optimizer[0].step()
-            self.optimizer[1].step()
+            for op in self.optimizer:
+                op.step()
 
             # self.writer.set_step((epoch - 1) * self.len_epoch + batch_idx)
             self.train_metrics.update('loss', loss.item())
@@ -70,8 +69,8 @@ class Trainer(BaseTrainer):
             log.update(**{'val_'+k : v for k, v in val_log.items()})
 
         if self.lr_scheduler is not None:
-            self.lr_scheduler[0].step()
-            self.lr_scheduler[1].step()
+            for lr in self.lr_scheduler:
+                lr.step()
         return log
 
     def _valid_epoch(self, epoch):

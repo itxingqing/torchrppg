@@ -132,10 +132,11 @@ class BaseTrainer:
             'epoch': epoch,
             'state_dict': self.model.state_dict(),
             'optimizer1': self.optimizer[0].state_dict(),
-            'optimizer2': self.optimizer[1].state_dict(),
             'monitor_best': self.mnt_best,
             'config': self.config
         }
+        if len(self.optimizer) > 1:
+            state['optimizer2'] = self.optimizer[1].state_dict()
         filename = str(self.checkpoint_dir / 'checkpoint-epoch{}.pth'.format(epoch))
         torch.save(state, filename)
         self.logger.info("Saving checkpoint: {} ...".format(filename))
@@ -167,7 +168,7 @@ class BaseTrainer:
             self.logger.warning("Warning: Optimizer type given in config file is different from that of checkpoint. "
                                 "Optimizer parameters not being resumed.")
         else:
-            self.optimizer[0].load_state_dict(checkpoint['optimizer1'])
-            self.optimizer[1].load_state_dict(checkpoint['optimizer2'])
+            for i, op in enumerate(self.optimizer):
+                op.load_state_dict(checkpoint[f'optimizer{i}'])
 
         self.logger.info("Checkpoint loaded. Resume training from epoch {}".format(self.start_epoch))

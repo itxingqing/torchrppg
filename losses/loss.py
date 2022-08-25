@@ -5,10 +5,10 @@ import matplotlib.pyplot as plt
 
 
 class Talos(nn.Module):
-    def __init__(self):
+    def __init__(self, subject_number=10):
         super(Talos, self).__init__()
         self.K = 61
-        self.subject_number = 10
+        self.subject_number = subject_number
         self.thea_s = torch.ones((self.subject_number, self.K), requires_grad=True)
         self.thea_s.to('cuda:0')
 
@@ -51,18 +51,18 @@ class Talos(nn.Module):
 
 
 class MSELoss(nn.Module):
-    def __init__(self):
+    def __init__(self, subject_number):
         super(MSELoss, self).__init__()
         self.mse = nn.MSELoss()
 
     def forward(self, y, y_hat, subject):
         oup = self.mse(y, y_hat)
-        fig = plt.figure(1)
-        plt.plot(y[0, :200].cpu().detach().numpy(), '-')
-        plt.plot(y_hat[0, :200].cpu().detach().numpy(), '--')
-        plt.draw()
-        plt.pause(2)
-        plt.close(fig)
+        # fig = plt.figure(1)
+        # plt.plot(y[0, :200].cpu().detach().numpy(), '-')
+        # plt.plot(y_hat[0, :200].cpu().detach().numpy(), '--')
+        # plt.draw()
+        # plt.pause(2)
+        # plt.close(fig)
         return oup
 
 

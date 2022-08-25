@@ -41,13 +41,13 @@ def process_face_frame(path_to_png, path_to_gt, path_to_save):
     pngs.sort()
     for i in range(n_segment):
         data = {}
-        segment_face = torch.zeros(segment_length, 3, 96, 96)
+        segment_face = torch.zeros(segment_length, 3, 36, 36)
         segment_label = torch.zeros(segment_length, dtype=torch.float32)
         float_label_detrend = np.zeros(segment_length, dtype=float)
         for j in range(i*240, i*239+240):
             png_path = os.path.join(path_to_png, pngs[j])
             temp_face = cv2.imread(png_path)
-            temp_face = cv2.resize(temp_face, (96, 96))
+            temp_face = cv2.resize(temp_face, (36, 36))
             temp_face = img_process(temp_face)
             # numpy to tensor
             temp_face = torch.from_numpy(temp_face)

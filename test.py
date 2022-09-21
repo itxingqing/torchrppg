@@ -11,8 +11,8 @@ from scipy.fftpack import fft
 
 if __name__ == '__main__':
     fps = 30
-    data_dir = '/media/pxierra/e70ff8ce-d5d4-4f52-aa2b-921ff250e5fc/P-VHRD-PTH/val'
-    model_path = '/media/pxierra/4ddb33c4-42d9-4544-b7b4-796994f061ce/xiongzhuang/1-PycharmProjects/rppg_tdm_talos/saved/models/RPPG_TDM_TALOS/0824_125315_TALOS_UBFC/model_best.pth'
+    data_dir = '/media/pxierra/4ddb33c4-42d9-4544-b7b4-796994f061ce/data/pluse/UBFC/TDM_rppg_input/DATASET_2_PTH/val'
+    model_path = '/media/pxierra/4ddb33c4-42d9-4544-b7b4-796994f061ce/xiongzhuang/1-PycharmProjects/rppg_tdm_talos/saved/models/RPPG_TDM_MSELoss/0919_190645/model_best.pth'
     # load model
     model = Model()
     model = model.to('cuda:0')

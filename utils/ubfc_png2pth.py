@@ -121,8 +121,8 @@ def process_face_frame(path_to_png, path_to_gt, path_to_save, subject):
         data['wave'] = (segment_label, int(subject[-2:]))
         # plt.plot(segment_label[:].detach().numpy(), '--')
         # plt.show()
-
-        torch.save(data, save_pth_path)
+        if int(subject[-2:]) not in [11, 18, 24]:
+            torch.save(data, save_pth_path)
 
 
 if __name__ == '__main__':

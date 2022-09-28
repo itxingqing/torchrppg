@@ -93,20 +93,20 @@ def img_process(img):
 
 
 def preprocess_png2pth(path_to_png, path_to_gt,  path_to_save):
-    subject = path_to_png.split('/')[-2]
-    version = path_to_png.split('/')[-1]
+    subject = path_to_png.split('/')[-1]
 
-    if int(subject[1:]) in [8, 9, 10]:
+    if int(subject[-2:]) in [1, 4, 5, 8, 9, 10, 11, 12, 13]:
         save_path = path_to_save
 
         # get GT label
         with open(path_to_gt) as f:
             gt = f.readlines()
-            gt = gt[1:]
-            float_wave = [float(i.split(',')[-1]) for i in gt]
-            float_hr_value = [float(i.split(',')[-2]) for i in gt]
-            mt_new, float_wave = process_pipe(float_wave, view=False, output="", name="")
+            gtTrace = gt[0].split()
+            gtHr = gt[1].split()
+            float_wave = [float(i) for i in gtTrace]
+            float_hr_value = [float(i) for i in gtHr]
             float_hr_value = float_hr_value[45:-45]
+            mt_new, float_wave = process_pipe(float_wave, view=False, output="", name="")
         f.close()
 
         # save data
@@ -115,20 +115,20 @@ def preprocess_png2pth(path_to_png, path_to_gt,  path_to_save):
         pngs = pngs[45:-45]
         frame_length = len(pngs)  # subject frame length
         segment_length = 240  # time length every input data
-        stride = 30
+        stride = 240
         # H = [(输入大小 - 卷积核大小 + 2 * P) / 步长] + 1
         n_segment = (frame_length - segment_length) // stride + 1  # subject segment length
 
         for i in range(n_segment):
             data = {}
-            segment_face = torch.zeros(segment_length, 3, 96, 96)
+            segment_face = torch.zeros(segment_length, 3, 128, 128)
             segment_label = torch.zeros(segment_length, dtype=torch.float32)
             float_label_detrend = np.zeros(segment_length, dtype=float)
             float_hr_value_repeat = np.zeros(segment_length, dtype=float)
             for j in range(i*stride, i*stride + segment_length):
                 png_path = os.path.join(path_to_png, pngs[j])
                 temp_face = cv2.imread(png_path)
-                temp_face = cv2.resize(temp_face, (96, 96))
+                temp_face = cv2.resize(temp_face, (128, 128))
                 temp_face = img_process(temp_face)
                 # numpy to tensor
                 temp_face = torch.from_numpy(temp_face)
@@ -137,7 +137,7 @@ def preprocess_png2pth(path_to_png, path_to_gt,  path_to_save):
                 segment_face[j - i * stride, :, :, :] = temp_face
                 float_label_detrend[j - i * stride] = float_wave[j]
                 float_hr_value_repeat[j - i * stride] = float_hr_value[j]
-            save_pth_path = save_path + '/' + subject + version + '_' + str(i) + '.pth'
+            save_pth_path = save_path + '/' + subject + '_' + str(i) + '.pth'
             data['face'] = segment_face
             # normlized wave
             # float_label_detrend = detrend(float_label_detrend, type == 'linear')
@@ -148,7 +148,7 @@ def preprocess_png2pth(path_to_png, path_to_gt,  path_to_save):
             # d_min = segment_label.min()
             # segment_label = torch.sub(segment_label, d_min).true_divide(d_max - d_min)
             # segment_label = (segment_label - 0.5).true_divide(0.5)
-            data['wave'] = (segment_label, int(subject[1:]))
+            data['wave'] = (segment_label, int(subject[-2:]))
             # hr value
             data['value'] = float_hr_value_repeat
 
@@ -238,21 +238,21 @@ def evaluation(path):
 
 if __name__ == '__main__':
     fps = 30
-    data_dir = "/media/pxierra/e70ff8ce-d5d4-4f52-aa2b-921ff250e5fc/P-VHRD-TDM"
-    save_pth_dir = "/media/pxierra/e70ff8ce-d5d4-4f52-aa2b-921ff250e5fc/P-VHRD-PTH_evaluation"
+    data_dir = "/media/pxierra/4ddb33c4-42d9-4544-b7b4-796994f061ce/data/pluse/UBFC/TDM_rppg_input"
+    save_pth_dir = "/media/pxierra/4ddb33c4-42d9-4544-b7b4-796994f061ce/data/pluse/UBFC/TDM_rppg_input/DATASET_2_PTH_evaluation"
     gt_paths = os.path.join(data_dir, 'path_to_gt.txt')
     png_paths = os.path.join(data_dir, 'path_to_png.txt')
-    # with open(gt_paths, 'r') as f_gt:
-    #     gt_list = f_gt.readlines()
-    # f_gt.close()
-    #
-    # with open(png_paths, 'r') as f_png:
-    #     png_list = f_png.readlines()
-    # f_png.close()
-    # list_png_gt = zip(png_list, gt_list)
-    # # generate pth every person, version and second as name "p10v1_51.pth"
-    # for i, (png_path, gt_path) in enumerate(list_png_gt):
-    #     preprocess_png2pth(png_path.strip(), gt_path.strip(), save_pth_dir)
+    with open(gt_paths, 'r') as f_gt:
+        gt_list = f_gt.readlines()
+    f_gt.close()
+
+    with open(png_paths, 'r') as f_png:
+        png_list = f_png.readlines()
+    f_png.close()
+    list_png_gt = zip(png_list, gt_list)
+    # generate pth every person, version and second as name "p10v1_51.pth"
+    for i, (png_path, gt_path) in enumerate(list_png_gt):
+        preprocess_png2pth(png_path.strip(), gt_path.strip(), save_pth_dir)
 
     # evalution
     model_path = '/media/pxierra/4ddb33c4-42d9-4544-b7b4-796994f061ce/xiongzhuang/1-PycharmProjects/rppg_tdm_talos/saved/models/RPPG_TDM_MSELoss/0927_153337/model_best.pth'
@@ -267,14 +267,17 @@ if __name__ == '__main__':
     data_list = os.listdir(save_pth_dir)
     hr_predict_dict = {'v1': [], 'v2': [], 'v3': [], 'v4': [], 'v5': [], 'v6': [], 'v7': []}
     hr_gt_dict = {'v1': [], 'v2': [], 'v3': [], 'v4': [], 'v5': [], 'v6': [], 'v7': []}
+    data_list.sort()
     for data_path in data_list:
         path = os.path.join(save_pth_dir, data_path)
-        scence = data_path.split('_')[0][-2:]
-        hr_predict, hr_gt = evaluation(path)
-        print("scence: ", scence, "hr predict: ", hr_predict, "hr gt: ", hr_gt)
-        hr_predict_dict[f'{scence}'].append(hr_predict)
-        hr_gt_dict[f'{scence}'].append(hr_gt)
-    for vx in ['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7']:
+        # scence = data_path.split('_')[0][-2:]
+        scence = 'v1'
+        if data_path.split('_')[0] != 'subject11':
+            hr_predict, hr_gt = evaluation(path)
+            print("data_path: ", data_path, "hr predict: ", hr_predict, "hr gt: ", hr_gt)
+            hr_predict_dict[f'{scence}'].append(hr_predict)
+            hr_gt_dict[f'{scence}'].append(hr_gt)
+    for vx in ['v1']:
         mse_result = mse(hr_predict_dict[f'{vx}'], hr_gt_dict[f'{vx}'])
         rmse_result = rmse(hr_predict_dict[f'{vx}'], hr_gt_dict[f'{vx}'])
         mae_result = mae(hr_predict_dict[f'{vx}'], hr_gt_dict[f'{vx}'])

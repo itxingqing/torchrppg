@@ -99,6 +99,10 @@ if __name__ == '__main__':
     with open(png_paths, 'r') as f_png:
         png_list = f_png.readlines()
     f_png.close()
+    print("Start generate pth from pngs ...")
     list_png_gt = zip(png_list, gt_list)
+    length = len(gt_list)
     for i, (png_path, gt_path) in enumerate(list_png_gt):
+        print(png_path, f"({i + 1}/{length})")
         preprocess_png2pth(png_path.strip(), gt_path.strip(), save_pth_dir)
+    print("Generate pth data finsh!")

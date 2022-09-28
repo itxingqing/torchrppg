@@ -7,7 +7,7 @@ from ppg_process_common_function import evaluation, mae, mse, rmse
 
 if __name__ == '__main__':
     fps = 30
-    val_pth_dir = "/media/pxierra/e70ff8ce-d5d4-4f52-aa2b-921ff250e5fc/P-VHRD-PTH_evaluation"
+    val_pth_dir = "/media/pxierra/e70ff8ce-d5d4-4f52-aa2b-921ff250e5fc/P-VHRD-PTH/val"
     # evalution
     model_path = '/media/pxierra/4ddb33c4-42d9-4544-b7b4-796994f061ce/xiongzhuang/1-PycharmProjects/rppg_tdm_talos/saved/models/RPPG_TDM_MSELoss/0919_190645/model_best.pth'
     # load model

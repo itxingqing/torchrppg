@@ -1,9 +1,9 @@
 {
-    "name": "RPPG_TDM_MSELoss",
+    "name": "RPPG_TDMNet_UBFC_MSELoss",
     "n_gpu": 2,
 
     "arch": {
-        "type": "Model",
+        "type": "TDMNet",
         "args": {}
     },
     "train_dataloader": {

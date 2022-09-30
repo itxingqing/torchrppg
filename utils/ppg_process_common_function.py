@@ -12,6 +12,10 @@ m_avg = lambda t, x, w: (np.asarray([t[i] for i in range(w, len(x) - w)]),
                                      mode='valid'))
 
 
+def sd(hr):
+    return np.std(hr)
+
+
 def mse(hr, hr_gt):
     hr_zip = zip(hr, hr_gt)
     mse = 0
@@ -32,6 +36,24 @@ def mae(hr, hr_gt):
         mae += abs(hr-gt)
     mae /=len(hr_gt)
     return mae
+
+
+def pearson(vector1, vector2):
+    n = len(vector1)
+    # simple sums
+    sum1 = sum(float(vector1[i]) for i in range(n))
+    sum2 = sum(float(vector2[i]) for i in range(n))
+    # sum up the squares
+    sum1_pow = sum([pow(v, 2.0) for v in vector1])
+    sum2_pow = sum([pow(v, 2.0) for v in vector2])
+    # sum up the products
+    p_sum = sum([vector1[i]*vector2[i] for i in range(n)])
+    # 分子num，分母den
+    num = p_sum - (sum1*sum2/n)
+    den = math.sqrt((sum1_pow-pow(sum1, 2)/n)*(sum2_pow-pow(sum2, 2)/n))
+    if den == 0:
+        return 0.0
+    return num/den
 
 
 def process_pipe(data, view=False, output="", name=""):
@@ -100,7 +122,7 @@ def evaluation(model, path, fps=30,visualize=False):
         plt.close(fig)
 
     # cal HR use ButterFilt and FouierTransfrom
-    ## ButterFilt
+    # ButterFilt
     ouput_wave = ouput[0,].cpu().detach().numpy()
     ouput_wave = detrend(ouput_wave, type == 'linear')
     [b_pulse, a_pulse] = butter(3, [0.75 / fps * 2, 2.5 / fps * 2], btype='bandpass')
@@ -110,8 +132,7 @@ def evaluation(model, path, fps=30,visualize=False):
     gt_wave = detrend(gt_wave, type == 'linear')
     [b_pulse, a_pulse] = butter(3, [0.75 / fps * 2, 2.5 / fps * 2], btype='bandpass')
     gt_wave = filtfilt(b_pulse, a_pulse, gt_wave)
-
-    ## FFT
+    # FFT
     length = 240
     hr_predict = 0
     # for index, wave in enumerate([ouput_wave, gt_wave]):

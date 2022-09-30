@@ -1,17 +1,17 @@
 import math
 import torch
 import os
-from models.model import Model
-from ppg_process_common_function import evaluation, mae, mse, rmse
+from models.model import PhysNetUpsample, TDMNet
+from ppg_process_common_function import evaluation, mae, sd, rmse, pearson
 
 
 if __name__ == '__main__':
     fps = 30
     val_pth_dir = "/media/pxierra/e70ff8ce-d5d4-4f52-aa2b-921ff250e5fc/P-VHRD-PTH/val"
     # evalution
-    model_path = '/media/pxierra/4ddb33c4-42d9-4544-b7b4-796994f061ce/xiongzhuang/1-PycharmProjects/rppg_tdm_talos/saved/models/RPPG_TDM_MSELoss/0919_190645/model_best.pth'
+    model_path = '/media/pxierra/4ddb33c4-42d9-4544-b7b4-796994f061ce/xiongzhuang/1-PycharmProjects/rppg_tdm_talos/saved/models/RPPG_TDMNet_UBFC_MSELoss/0929_155543/model_best.pth'
     # load model
-    model = Model()
+    model = TDMNet()
     model = model.to('cuda:0')
     model = torch.nn.DataParallel(model, device_ids=[0, 1])
     checkpoint = torch.load(model_path)
@@ -29,7 +29,8 @@ if __name__ == '__main__':
         hr_predict_dict[f'{scence}'].append(hr_predict)
         hr_gt_dict[f'{scence}'].append(hr_gt)
     for vx in ['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7']:
-        mse_result = mse(hr_predict_dict[f'{vx}'], hr_gt_dict[f'{vx}'])
+        sd_result = sd(hr_predict_dict[f'{vx}'])
         rmse_result = rmse(hr_predict_dict[f'{vx}'], hr_gt_dict[f'{vx}'])
         mae_result = mae(hr_predict_dict[f'{vx}'], hr_gt_dict[f'{vx}'])
-        print(f"{vx} ", "mse: ", mse_result, "rmse: ", rmse_result, "mae: ", mae_result)
+        pearson_result = pearson(hr_predict_dict[f'{vx}'], hr_gt_dict[f'{vx}'])
+        print(f"{vx} ", "sd: ", sd_result, "rmse: ", rmse_result, "mae: ", mae_result, "pearson: ", pearson_result)

@@ -29,6 +29,9 @@ class SpatialEncoder(nn.Module):
         self.pool2 = nn.AvgPool2d(kernel_size=(2, 2), stride=(2, 2))
 
     def forward(self, x):
+        x_mean = torch.mean(x, dim=(1, 3, 4), keepdim=True)
+        x_std = torch.std(x, dim=(1, 3, 4), keepdim=True)
+        x = (x - x_mean) / x_std
         B, T, C, H, W = x.size()
         # (B, T, 3, 96, 96) -> (B, T, 16, 96, 96)
         x = torch.reshape(x, (B*T, C, H, W))

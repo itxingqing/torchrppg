@@ -169,6 +169,6 @@ class BaseTrainer:
                                 "Optimizer parameters not being resumed.")
         else:
             for i, op in enumerate(self.optimizer):
-                op.load_state_dict(checkpoint[f'optimizer{i}'])
+                op.load_state_dict(checkpoint[f'optimizer{i+1}'])
 
         self.logger.info("Checkpoint loaded. Resume training from epoch {}".format(self.start_epoch))

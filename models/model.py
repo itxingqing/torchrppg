@@ -105,6 +105,9 @@ class PhysNetUpsample(nn.Module):
     def forward(self, x):
         B, T, C, H, W = x.size()
         x = torch.permute(x, (0, 2, 1, 3, 4))
+        x_mean = torch.mean(x, dim=(2, 3, 4), keepdim=True)
+        x_std = torch.std(x, dim=(2, 3, 4), keepdim=True)
+        x = (x - x_mean) / x_std
         parity = []
         x = self.start(x)
         x = self.loop1(x)

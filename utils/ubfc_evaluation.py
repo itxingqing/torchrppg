@@ -1,7 +1,7 @@
 import math
 import torch
 import os
-from models.model import PhysNetUpsample, TDMNet
+from models.model import PhysNetUpsample, TDMNet, N3DED128, N3DED64, N3DED32, N3DED16, N3DED8
 from ppg_process_common_function import evaluation, mae, sd, rmse, pearson
 
 if __name__ == '__main__':

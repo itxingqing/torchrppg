@@ -91,9 +91,9 @@ class DTC(nn.Module):
         self.dp = nn.Dropout(p=0.5)
 
     def forward(self, x):
-        B, T, C, H, W = x.size()
-        # x:(B, T, C, H, W) -> (B, H, W, C, T)
-        x = torch.permute(x, (0, 3, 4, 2, 1))
+        B, C, T, H, W = x.size()
+        # x:(B, C, T, H, W) -> (B, H, W, C, T)
+        x = torch.permute(x, (0, 3, 4, 1, 2))
         # x:(B, H, W, C, T) -> (B*HxW, C, T)
         x = torch.reshape(x, (B*H*W, C, T))
         output = self.conv1d(x)

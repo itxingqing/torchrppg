@@ -340,7 +340,6 @@ class ViT_ST_ST_Compact3_TDC_gra_sharp(nn.Module):
 
     def forward(self, x):
         gra_sharp = 2.0
-        x = x.permute(0, 2, 1, 3, 4).contiguous()
 
         b, c, t, fh, fw = x.shape
         

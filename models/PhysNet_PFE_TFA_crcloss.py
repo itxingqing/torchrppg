@@ -394,7 +394,6 @@ class PhysNet_padding_ED_peak(nn.Module):
         self.tfa = TFA(num_feat=16, num_block=15, spynet_path='/media/pxierra/4ddb33c4-42d9-4544-b7b4-796994f061ce/xiongzhuang/2-GitHub/Arbitrary_Resolution_rPPG/weights/spynet_.pth')
 
     def forward(self, x, y):  # x [3, T, 128,128]
-        x = x.permute(0, 2, 1, 3, 4).contiguous()
         x_visual = x
         z = x.permute(0, 2, 1, 3, 4).contiguous()
         z = self.tfa(z)

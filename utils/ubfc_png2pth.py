@@ -64,6 +64,7 @@ def preprocess_png2pth(path_to_png, path_to_gt, path_to_save, subject):
             float_label_detrend[j - i * stride] = float_wave[j]
             float_hr_value_repeat[j - i * stride] = float_hr_value[j]
         save_pth_path = save_path + '/' + subject + '_' + str(i) + '.pth'
+        segment_face = torch.permute(segment_face, (1, 0, 2, 3))
         data['face'] = segment_face
         # normlized wave
         # float_label_detrend = detrend(float_label_detrend, type == 'linear')

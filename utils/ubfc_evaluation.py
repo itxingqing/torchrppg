@@ -1,19 +1,18 @@
 import math
 import torch
 import os
-from models.model import PhysNetUpsample, TDMNet, N3DED128, N3DED64, N3DED32, N3DED16, N3DED8
+from models.model import PhysNetUpsample, TDMNet, N3DED128, N3DED64, N3DED32, N3DED16, N3DED8, ViT_ST_ST_Compact3_TDC_gra_sharp, PhysNet_padding_ED_peak
 from ppg_process_common_function import evaluation, mae, sd, rmse, pearson
 
 if __name__ == '__main__':
     fps = 30
-    model_path = '/media/pxierra/4ddb33c4-42d9-4544-b7b4-796994f061ce/xiongzhuang/1-PycharmProjects/rppg_tdm_talos/saved/models/RPPG_TDMNet_UBFC_MSELoss/0929_155543/model_best.pth'
+    model_path = '/media/pxierra/4ddb33c4-42d9-4544-b7b4-796994f061ce/xiongzhuang/1-PycharmProjects/rppg_tdm_talos/saved/models/RPPG_Physformer_UBFC_MSELoss/1201_175701/model_best.pth'
     val_pth_dir = "/media/pxierra/4ddb33c4-42d9-4544-b7b4-796994f061ce/data/pluse/UBFC/TDM_rppg_input/DATASET_2_PTH/val"
     # evalution
     print("Start eval ... ")
     # load model
     model = TDMNet()
     model = model.to('cuda:0')
-    model = torch.nn.DataParallel(model, device_ids=[0, 1])
     checkpoint = torch.load(model_path)
     model.load_state_dict(checkpoint['state_dict'])
     model.eval()

@@ -6,6 +6,7 @@ import numpy as np
 import torch
 from scipy.fftpack import fft
 import math
+from skimage.util import img_as_float
 
 m_avg = lambda t, x, w: (np.asarray([t[i] for i in range(w, len(x) - w)]),
                          np.convolve(x, np.ones((2 * w + 1,)) / (2 * w + 1),
@@ -36,6 +37,14 @@ def mae(hr, hr_gt):
         mae += abs(hr-gt)
     mae /=len(hr_gt)
     return mae
+
+
+def img_process(img):
+    vidLxL = img_as_float(img[:, :, :])  # img_as_float是将图像除以255,变为float型
+    vidLxL = vidLxL.astype('float32')
+    vidLxL[vidLxL > 1] = 1  # 把数据归一化到1/255～1之间
+    vidLxL[vidLxL < (1 / 255)] = 1 / 255  # 把数据归一化到1/255～1之间
+    return vidLxL
 
 
 def pearson(vector1, vector2):
@@ -112,6 +121,7 @@ def evaluation(model, path, fps=30,visualize=False):
     hr_gt = np.mean(data['value'])
     gt = torch.unsqueeze(gt, dim=0)
     # inference
+    input = input.cuda()
     ouput = model(input)
     if visualize:
         fig = plt.figure(1)

@@ -1,7 +1,7 @@
 import math
 import torch
 import os
-from models.model import PhysNetUpsample, TDMNet, N3DED128, N3DED64, N3DED32, N3DED16, N3DED8
+from models.model import PhysNetUpsample, TDMNet, N3DED128, N3DED64, N3DED32, N3DED16, N3DED8, ViT_ST_ST_Compact3_TDC_gra_sharp, PhysNet_padding_ED_peak
 from ppg_process_common_function import evaluation, mae, sd, rmse, pearson
 
 
@@ -13,7 +13,6 @@ if __name__ == '__main__':
     # load model
     model = TDMNet()
     model = model.to('cuda:0')
-    model = torch.nn.DataParallel(model, device_ids=[0, 1])
     checkpoint = torch.load(model_path)
     model.load_state_dict(checkpoint['state_dict'])
     model.eval()

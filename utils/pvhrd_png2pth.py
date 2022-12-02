@@ -3,25 +3,10 @@ import torch
 import os
 from skimage.util import img_as_float
 import numpy as np
-from scipy.signal import butter, filtfilt, detrend
-from scipy import  signal
-import matplotlib.pyplot as plt
-from ppg_process_common_function import process_pipe
+from ppg_process_common_function import process_pipe, img_process
 
 
-m_avg = lambda t, x, w: (np.asarray([t[i] for i in range(w, len(x) - w)]),
-                         np.convolve(x, np.ones((2 * w + 1,)) / (2 * w + 1),
-                                     mode='valid'))
-
-def img_process(img):
-    vidLxL = img_as_float(img[:, :, :])  # img_as_float是将图像除以255,变为float型
-    vidLxL = vidLxL.astype('float32')
-    vidLxL[vidLxL > 1] = 1  # 把数据归一化到1/255～1之间
-    vidLxL[vidLxL < (1 / 255)] = 1 / 255  # 把数据归一化到1/255～1之间
-    return vidLxL
-
-
-def preprocess_png2pth(path_to_png, path_to_gt, path_to_save):
+def preprocess_png2pth(path_to_png, path_to_gt, path_to_save, image_size):
     # split train and val
     subject = path_to_png.split('/')[-2]
     version = path_to_png.split('/')[-1]
@@ -53,14 +38,14 @@ def preprocess_png2pth(path_to_png, path_to_gt, path_to_save):
 
     for i in range(n_segment):
         data = {}
-        segment_face = torch.zeros(segment_length, 3, 96, 96)
+        segment_face = torch.zeros(segment_length, 3, image_size, image_size)
         segment_label = torch.zeros(segment_length, dtype=torch.float32)
         float_label_detrend = np.zeros(segment_length, dtype=float)
         float_hr_value_repeat = np.zeros(segment_length, dtype=float)
         for j in range(i * stride, i * stride + segment_length):
             png_path = os.path.join(path_to_png, pngs[j])
             temp_face = cv2.imread(png_path)
-            temp_face = cv2.resize(temp_face, (96, 96))
+            temp_face = cv2.resize(temp_face, (image_size, image_size))
             temp_face = img_process(temp_face)
             # numpy to tensor
             temp_face = torch.from_numpy(temp_face)
@@ -92,6 +77,7 @@ if __name__ == '__main__':
     save_pth_dir = "/media/pxierra/e70ff8ce-d5d4-4f52-aa2b-921ff250e5fc/P-VHRD-PTH"
     gt_paths = os.path.join(data_dir, 'path_to_gt.txt')
     png_paths = os.path.join(data_dir, 'path_to_png.txt')
+    image_size = 128
     with open(gt_paths, 'r') as f_gt:
         gt_list = f_gt.readlines()
     f_gt.close()
@@ -104,5 +90,5 @@ if __name__ == '__main__':
     length = len(gt_list)
     for i, (png_path, gt_path) in enumerate(list_png_gt):
         print(png_path, f"({i + 1}/{length})")
-        preprocess_png2pth(png_path.strip(), gt_path.strip(), save_pth_dir)
+        preprocess_png2pth(png_path.strip(), gt_path.strip(), save_pth_dir, image_size)
     print("Generate pth data finsh!")

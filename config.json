@@ -1,15 +1,15 @@
 {
-    "name": "RPPG_TDM_MSELoss",
+    "name": "RPPG_TDMNet_UBFC_MSELoss",
     "n_gpu": 2,
 
     "arch": {
-        "type": "Model",
+        "type": "TDMNet",
         "args": {}
     },
     "train_dataloader": {
         "type": "UBFCDataloader",
         "args":{
-            "data_dir": "/media/pxierra/e70ff8ce-d5d4-4f52-aa2b-921ff250e5fc/P-VHRD-PTH/train",
+            "data_dir": "/media/pxierra/4ddb33c4-42d9-4544-b7b4-796994f061ce/data/pluse/UBFC/TDM_rppg_input/DATASET_2_PTH/train",
             "batch_size": 8,
             "shuffle": true,
             "num_workers": 4,
@@ -19,7 +19,7 @@
     "val_dataloader": {
         "type": "UBFCDataloader",
         "args":{
-            "data_dir": "/media/pxierra/e70ff8ce-d5d4-4f52-aa2b-921ff250e5fc/P-VHRD-PTH/val",
+            "data_dir": "/media/pxierra/4ddb33c4-42d9-4544-b7b4-796994f061ce/data/pluse/UBFC/TDM_rppg_input/DATASET_2_PTH/val",
             "batch_size": 8,
             "shuffle": true,
             "num_workers": 4,

@@ -1,23 +1,11 @@
 import cv2
 import torch
 import os
-from skimage.util import img_as_float
 import numpy as np
-from scipy.signal import butter, filtfilt, detrend
-from scipy import  signal
-import matplotlib.pyplot as plt
-from ppg_process_common_function import process_pipe
+from ppg_process_common_function import process_pipe, img_process
 
 
-def img_process(img):
-    vidLxL = img_as_float(img[:, :, :])  # img_as_float是将图像除以255,变为float型
-    vidLxL = vidLxL.astype('float32')
-    vidLxL[vidLxL > 1] = 1  # 把数据归一化到1/255～1之间
-    vidLxL[vidLxL < (1 / 255)] = 1 / 255  # 把数据归一化到1/255～1之间
-    return vidLxL
-
-
-def preprocess_png2pth(path_to_png, path_to_gt, path_to_save, subject):
+def preprocess_png2pth(path_to_png, path_to_gt, path_to_save, subject, image_size):
     # split train and val
     if int(subject[-2:]) in [1, 4, 5, 8, 9, 10, 11, 12, 13]:
         save_path = os.path.join(path_to_save, 'val')
@@ -47,14 +35,14 @@ def preprocess_png2pth(path_to_png, path_to_gt, path_to_save, subject):
 
     for i in range(n_segment):
         data = {}
-        segment_face = torch.zeros(segment_length, 3, 128, 128)
+        segment_face = torch.zeros(segment_length, 3, image_size, image_size)
         segment_label = torch.zeros(segment_length, dtype=torch.float32)
         float_label_detrend = np.zeros(segment_length, dtype=float)
         float_hr_value_repeat = np.zeros(segment_length, dtype=float)
         for j in range(i * stride, i * stride + segment_length):
             png_path = os.path.join(path_to_png, pngs[j])
             temp_face = cv2.imread(png_path)
-            temp_face = cv2.resize(temp_face, (128, 128))
+            temp_face = cv2.resize(temp_face, (image_size, image_size))
             temp_face = img_process(temp_face)
             # numpy to tensor
             temp_face = torch.from_numpy(temp_face)
@@ -86,6 +74,7 @@ if __name__ == '__main__':
     dataset_face_dir = "/media/pxierra/4ddb33c4-42d9-4544-b7b4-796994f061ce/data/pluse/UBFC/TDM_rppg_input/DATASET_2_FACE"
     dataset_gt_dir = "/media/pxierra/4ddb33c4-42d9-4544-b7b4-796994f061ce/data/pluse/UBFC/DATASET_2"
     save_pth_dir = "/media/pxierra/4ddb33c4-42d9-4544-b7b4-796994f061ce/data/pluse/UBFC/TDM_rppg_input/DATASET_2_PTH"
+    image_size = 128
     subjects = os.listdir(dataset_face_dir)
     subjects.sort()
     print("Start generate pth from pngs ...")
@@ -94,5 +83,5 @@ if __name__ == '__main__':
         print(subject, f"({i+1}/{length})")
         png_dir = os.path.join(dataset_face_dir, subject)
         gt_path = os.path.join(dataset_gt_dir, subject, 'ground_truth.txt')
-        preprocess_png2pth(png_dir, gt_path, save_pth_dir, subject)
+        preprocess_png2pth(png_dir, gt_path, save_pth_dir, subject, image_size)
     print("Generate pth data finsh!")

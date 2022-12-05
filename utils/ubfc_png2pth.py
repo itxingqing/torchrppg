@@ -66,7 +66,8 @@ def preprocess_png2pth(path_to_png, path_to_gt, path_to_save, subject, image_siz
         data['wave'] = (segment_label, int(subject[-2:]))
         # hr value
         data['value'] = float_hr_value_repeat
-        if int(subject[-2:]) not in [11, 18, 24]:
+        print(int(subject[-2:]), ' ', data['value'])
+        if int(subject[-2:]) not in [11, 18, 20, 24]:
             torch.save(data, save_pth_path)
 
 

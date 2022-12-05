@@ -38,13 +38,13 @@ class Trainer(BaseTrainer):
         """
         self.model.train()
         self.train_metrics.reset()
-        for batch_idx, (data, target, subject) in enumerate(self.data_loader):
-            data, target, subject = data.to(self.device), target.to(self.device), subject.to(self.device)
+        for batch_idx, (data, target, value, subject) in enumerate(self.data_loader):
+            data, target, value, subject = data.to(self.device), target.to(self.device), value.to(self.device), subject.to(self.device)
             for op in self.optimizer:
                 op.zero_grad()
             output = self.model(data)
-            loss = self.criterion(output, target, subject)
-            loss.backward(retain_graph=True)
+            loss = self.criterion(output, target, value, subject)
+            loss.backward()
             for op in self.optimizer:
                 op.step()
 
@@ -83,11 +83,11 @@ class Trainer(BaseTrainer):
         self.model.eval()
         self.valid_metrics.reset()
         with torch.no_grad():
-            for batch_idx, (data, target, subject) in enumerate(self.data_loader):
-                data, target, subject = data.to(self.device), target.to(self.device), subject.to(self.device)
+            for batch_idx, (data, target, value, subject) in enumerate(self.data_loader):
+                data, target, value, subject = data.to(self.device), target.to(self.device), value.to(self.device), subject.to(self.device)
 
                 output = self.model(data)
-                loss = self.criterion(output, target, subject)
+                loss = self.criterion(output, target, value, subject)
 
                 # self.writer.set_step((epoch - 1) * len(self.valid_data_loader) + batch_idx, 'valid')
                 self.valid_metrics.update('loss', loss.item())

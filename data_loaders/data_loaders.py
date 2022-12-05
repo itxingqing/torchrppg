@@ -20,7 +20,9 @@ class UBFCDataset(Dataset):
         data = torch.load(path)
         face_frames = data['face']
         gt_label, subject = data['wave']
-        return face_frames, gt_label, subject
+        gt_value = data['value']
+        gt_value = torch.from_numpy(gt_value.copy()).float()
+        return face_frames, gt_label, gt_value, subject
 
 
 class UBFCDataloader(DataLoader):

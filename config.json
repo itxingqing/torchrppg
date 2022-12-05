@@ -1,16 +1,23 @@
 {
-    "name": "RPPG_TDMNet_UBFC_MSELoss",
-    "n_gpu": 2,
+    "name": "RPPG_PhysTransformer_UBFC_PhysFormerLoss",
+    "n_gpu": 1,
 
     "arch": {
-        "type": "TDMNet",
-        "args": {}
+        "type": "ViT_ST_ST_Compact3_TDC_gra_sharp",
+        "args": {
+            "dim": 96,
+            "ff_dim": 144,
+            "num_heads": 4,
+            "num_layers": 12,
+            "dropout_rate": 0.1,
+            "theta": 0.7
+        }
     },
     "train_dataloader": {
         "type": "UBFCDataloader",
         "args":{
             "data_dir": "/media/pxierra/4ddb33c4-42d9-4544-b7b4-796994f061ce/data/pluse/UBFC/TDM_rppg_input/DATASET_2_PTH/train",
-            "batch_size": 8,
+            "batch_size": 1,
             "shuffle": true,
             "num_workers": 4,
             "drop_last": true
@@ -20,7 +27,7 @@
         "type": "UBFCDataloader",
         "args":{
             "data_dir": "/media/pxierra/4ddb33c4-42d9-4544-b7b4-796994f061ce/data/pluse/UBFC/TDM_rppg_input/DATASET_2_PTH/val",
-            "batch_size": 8,
+            "batch_size": 1,
             "shuffle": true,
             "num_workers": 4,
             "drop_last": true
@@ -43,7 +50,7 @@
         }
     },
     "loss": {
-        "type": "MSELoss",
+        "type": "PhysFormerLoss",
         "args": {
             "subject_number": 10
         }

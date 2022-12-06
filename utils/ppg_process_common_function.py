@@ -113,7 +113,64 @@ def process_pipe(data, view=False, output="", name=""):
     return mt_new, signal_pure
 
 
-def evaluation(model, path, fps=30,visualize=False):
+def postprocess(ouput: torch.Tensor, fps: int):
+    # cal HR use ButterFilt and FouierTransfrom
+    # ButterFilt
+    with torch.no_grad():
+        ouput_wave = ouput[0, ].cpu().detach().numpy()
+        ouput_wave = detrend(ouput_wave, type == 'linear')
+        [b_pulse, a_pulse] = butter(3, [0.75 / fps * 2, 2.5 / fps * 2], btype='bandpass')
+        ouput_wave = filtfilt(b_pulse, a_pulse, ouput_wave)
+        # FFT
+        length = 240
+        hr_predict = 0
+        # for index, wave in enumerate([ouput_wave, gt_wave]):
+        for index, wave in enumerate([ouput_wave]):
+            v_fft = fft(wave)
+            v_FA = np.zeros((length,))
+            v_FA[0] = v_fft[0].real * v_fft[0].real
+            for i in range(1, int(length / 2)):
+                v_FA[i] = v_fft[i].real * v_fft[i].real + v_fft[i].imag * v_fft[i].imag
+            v_FA[int(length / 2)] = v_fft[int(length / 2)].real * v_fft[int(length / 2)].real
+
+            time = 0.0
+            for i in range(0, length - 1):
+                time += 33
+
+            bottom = (int)(0.7 * time / 1000.0)
+            top = (int)(2.5 * time / 1000.0)
+            if top > length / 2:
+                top = length / 2
+            i_maxpower = 0
+            maxpower = 0.0
+            for i in range(bottom - 2, top - 2 + 1):
+                if maxpower < v_FA[i]:
+                    maxpower = v_FA[i]
+                    i_maxpower = i
+
+            noise_power = 0.0
+            signal_power = 0.0
+            signal_moment = 0.0
+            for i in range(bottom, top + 1):
+                if (i >= i_maxpower - 2) and (i <= i_maxpower + 2):
+                    signal_power += v_FA[i]
+                    signal_moment += i * v_FA[i]
+                else:
+                    noise_power += v_FA[i]
+
+            if signal_power > 0.01 and noise_power > 0.01:
+                snr = 10.0 * math.log10(signal_power / noise_power) + 1
+                bias = i_maxpower - (signal_moment / signal_power)
+                snr *= (1.0 / (1.0 + bias * bias))
+
+            hr = (signal_moment / signal_power) * 60000.0 / time
+            hr_predict = hr
+            hr_predict = torch.tensor([hr_predict])
+            hr_predict = hr_predict.view(1, -1)
+    return hr_predict
+
+
+def evaluation(model, path, fps=30, visualize=False):
     data = torch.load(path)
     input = data['face']
     input = torch.unsqueeze(input, dim=0)
@@ -123,6 +180,12 @@ def evaluation(model, path, fps=30,visualize=False):
     # inference
     input = input.cuda()
     ouput = model(input)
+    # cal HR use ButterFilt and FouierTransfrom
+    if len(ouput) > 1:
+        hr_predict = postprocess(ouput[0], fps=30)
+    else:
+        hr_predict = postprocess(ouput, fps=30)
+    hr_predict = hr_predict[0, 0]
     if visualize:
         fig = plt.figure(1)
         plt.plot(ouput[0, ].cpu().detach().numpy(), '-')
@@ -131,59 +194,4 @@ def evaluation(model, path, fps=30,visualize=False):
         plt.pause(2)
         plt.close(fig)
 
-    # cal HR use ButterFilt and FouierTransfrom
-    # ButterFilt
-    ouput_wave = ouput[0,].cpu().detach().numpy()
-    ouput_wave = detrend(ouput_wave, type == 'linear')
-    [b_pulse, a_pulse] = butter(3, [0.75 / fps * 2, 2.5 / fps * 2], btype='bandpass')
-    ouput_wave = filtfilt(b_pulse, a_pulse, ouput_wave)
-
-    gt_wave = gt[0,].cpu().detach().numpy()
-    gt_wave = detrend(gt_wave, type == 'linear')
-    [b_pulse, a_pulse] = butter(3, [0.75 / fps * 2, 2.5 / fps * 2], btype='bandpass')
-    gt_wave = filtfilt(b_pulse, a_pulse, gt_wave)
-    # FFT
-    length = 240
-    hr_predict = 0
-    # for index, wave in enumerate([ouput_wave, gt_wave]):
-    for index, wave in enumerate([ouput_wave]):
-        v_fft = fft(wave)
-        v_FA = np.zeros((length,))
-        v_FA[0] = v_fft[0].real * v_fft[0].real
-        for i in range(1, int(length / 2)):
-            v_FA[i] = v_fft[i].real * v_fft[i].real + v_fft[i].imag * v_fft[i].imag
-        v_FA[int(length / 2)] = v_fft[int(length / 2)].real * v_fft[int(length / 2)].real
-
-        time = 0.0
-        for i in range(0, length - 1):
-            time += 33
-
-        bottom = (int)(0.7 * time / 1000.0)
-        top = (int)(2.5 * time / 1000.0)
-        if top > length / 2:
-            top = length / 2
-        i_maxpower = 0
-        maxpower = 0.0
-        for i in range(bottom - 2, top - 2 + 1):
-            if maxpower < v_FA[i]:
-                maxpower = v_FA[i]
-                i_maxpower = i
-
-        noise_power = 0.0
-        signal_power = 0.0
-        signal_moment = 0.0
-        for i in range(bottom, top + 1):
-            if (i >= i_maxpower - 2) and (i <= i_maxpower + 2):
-                signal_power += v_FA[i]
-                signal_moment += i * v_FA[i]
-            else:
-                noise_power += v_FA[i]
-
-        if signal_power > 0.01 and noise_power > 0.01:
-            snr = 10.0 * math.log10(signal_power / noise_power) + 1
-            bias = i_maxpower - (signal_moment / signal_power)
-            snr *= (1.0 / (1.0 + bias * bias))
-
-        hr = (signal_moment / signal_power) * 60000.0 / time
-        hr_predict = hr
     return hr_predict, hr_gt

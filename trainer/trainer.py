@@ -2,7 +2,9 @@ import numpy as np
 import torch
 from torchvision.utils import make_grid
 from base import BaseTrainer
-from utils import inf_loop, MetricTracker
+from utils import inf_loop
+from utils.ppg_process_common_function import postprocess
+from metrices import MetricTracker
 
 
 class Trainer(BaseTrainer):
@@ -38,21 +40,30 @@ class Trainer(BaseTrainer):
         """
         self.model.train()
         self.train_metrics.reset()
+        pred_value = torch.zeros(1, 1).cuda()
+        gt_value = torch.zeros(1, 1).cuda()
         for batch_idx, (data, target, value, subject) in enumerate(self.data_loader):
             data, target, value, subject = data.to(self.device), target.to(self.device), value.to(self.device), subject.to(self.device)
             for op in self.optimizer:
                 op.zero_grad()
             output = self.model(data)
             loss = self.criterion(output, target, value, subject)
+            if len(output) > 1:
+                pred_value_temp = postprocess(output[0], fps=30)
+                pred_value_temp = pred_value_temp.cuda()
+            else:
+                pred_value_temp = postprocess(output, fps=30)
+                pred_value_temp = pred_value_temp.cuda()
+            gt_val_temp = torch.mean(value, dim=1).view(1, -1).cuda()
+            pred_value = torch.cat((pred_value, pred_value_temp), dim=1).cuda()
+            gt_value = torch.cat((gt_value, gt_val_temp), dim=1).cuda()
+
             loss.backward()
             for op in self.optimizer:
                 op.step()
 
             # self.writer.set_step((epoch - 1) * self.len_epoch + batch_idx)
             self.train_metrics.update('loss', loss.item())
-            for met in self.metric_ftns:
-                self.train_metrics.update(met.__name__, met(output, target))
-
             if batch_idx % self.log_step == 0:
                 self.logger.debug('Train Epoch: {} {} Loss: {:.6f}'.format(
                     epoch,
@@ -62,6 +73,8 @@ class Trainer(BaseTrainer):
 
             if batch_idx == self.len_epoch:
                 break
+        for met in self.metric_ftns:
+            self.train_metrics.update(met.__name__, met(pred_value[:, 1:], gt_value[:, 1:]))
         log = self.train_metrics.result()
 
         if self.do_validation:
@@ -82,20 +95,30 @@ class Trainer(BaseTrainer):
         """
         self.model.eval()
         self.valid_metrics.reset()
+        pred_value = torch.zeros(1, 1).cuda()
+        gt_value = torch.zeros(1, 1).cuda()
         with torch.no_grad():
             for batch_idx, (data, target, value, subject) in enumerate(self.data_loader):
                 data, target, value, subject = data.to(self.device), target.to(self.device), value.to(self.device), subject.to(self.device)
 
                 output = self.model(data)
                 loss = self.criterion(output, target, value, subject)
+                if len(output) > 1:
+                    pred_value_temp = postprocess(output[0], fps=30)
+                    pred_value_temp = pred_value_temp.cuda()
+                else:
+                    pred_value_temp = postprocess(output, fps=30)
+                    pred_value_temp = pred_value_temp.cuda()
+                gt_val_temp = torch.mean(value, dim=1).view(1, -1).cuda()
+                pred_value = torch.cat((pred_value, pred_value_temp), dim=1).cuda()
+                gt_value = torch.cat((gt_value, gt_val_temp), dim=1).cuda()
 
                 # self.writer.set_step((epoch - 1) * len(self.valid_data_loader) + batch_idx, 'valid')
                 self.valid_metrics.update('loss', loss.item())
-                for met in self.metric_ftns:
-                    self.valid_metrics.update(met.__name__, met(output, target))
                 # self.writer.add_image('input', make_grid(data.cpu(), nrow=8, normalize=True))
-
         # add histogram of model parameters to the tensorboard
+        for met in self.metric_ftns:
+            self.valid_metrics.update(met.__name__, met(pred_value[:, 1:], gt_value[:, 1:]))
         for name, p in self.model.named_parameters():
             self.writer.add_histogram(name, p, bins='auto')
         return self.valid_metrics.result()

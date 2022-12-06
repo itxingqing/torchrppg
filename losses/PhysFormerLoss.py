@@ -196,7 +196,7 @@ class PhysFormerLoss(nn.Module):
 
         a = 0.1
         b = 1.0
-        print("loss_rPPG：", loss_rPPG.data, 'fre_loss: ', fre_loss.data, 'kl_loss: ', kl_loss.data)
+        # print("loss_rPPG：", loss_rPPG.data, 'fre_loss: ', fre_loss.data, 'kl_loss: ', kl_loss.data)
 
-        loss = a*loss_rPPG + b*fre_loss
+        loss = a*loss_rPPG + b*(fre_loss + kl_loss)
         return loss

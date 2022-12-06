@@ -1,12 +1,9 @@
-# TDM_RPPG: Efficient Remote Photoplethysmography with Temporal Derivative Modules and Time-Shift Invariant Loss
-
-The unofficial implementation by pytorch.
-
+# A general remote photoplethysmography (rPPG) training framework
 
 # 0. Create conda env
 ```
-$ conda create -n tdm_rppg python=3.7
-$ conda activate tdm_rppg
+$ conda create -n torchrppg python=3.7
+$ conda activate torchrppg
 $ pip install -r requirements.txt
 ```
 # Prepare data

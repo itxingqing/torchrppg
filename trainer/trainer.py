@@ -42,6 +42,8 @@ class Trainer(BaseTrainer):
         self.train_metrics.reset()
         pred_value = torch.zeros(1, 1).cuda()
         gt_value = torch.zeros(1, 1).cuda()
+        pred_wave = torch.zeros(1, 240).cuda()
+        gt_wave = torch.zeros(1, 240).cuda()
         for batch_idx, (data, target, value, subject) in enumerate(self.data_loader):
             data, target, value, subject = data.to(self.device), target.to(self.device), value.to(self.device), subject.to(self.device)
             for op in self.optimizer:
@@ -49,15 +51,20 @@ class Trainer(BaseTrainer):
             output = self.model(data)
             loss = self.criterion(output, target, value, subject)
             if len(output) > 1:
+                pred_wave_temp = output[0]
                 pred_value_temp = postprocess(output[0], fps=30)
                 pred_value_temp = pred_value_temp.cuda()
             else:
+                pred_wave_temp = output
                 pred_value_temp = postprocess(output, fps=30)
                 pred_value_temp = pred_value_temp.cuda()
             gt_val_temp = torch.mean(value, dim=1).view(1, -1).cuda()
-            pred_value = torch.cat((pred_value, pred_value_temp), dim=1).cuda()
-            gt_value = torch.cat((gt_value, gt_val_temp), dim=1).cuda()
+            pred_value = torch.cat((pred_value, pred_value_temp), dim=0).cuda()
+            gt_value = torch.cat((gt_value, gt_val_temp), dim=0).cuda()
 
+            gt_wave_temp = target
+            pred_wave = torch.cat((pred_wave, pred_wave_temp), dim=0).cuda()
+            gt_wave = torch.cat((gt_wave, gt_wave_temp), dim=0).cuda()
             loss.backward()
             for op in self.optimizer:
                 op.step()
@@ -74,7 +81,10 @@ class Trainer(BaseTrainer):
             if batch_idx == self.len_epoch:
                 break
         for met in self.metric_ftns:
-            self.train_metrics.update(met.__name__, met(pred_value[:, 1:], gt_value[:, 1:]))
+            if met.__name__ == 'r':
+                self.train_metrics.update(met.__name__, met(pred_wave[1:, :], gt_wave[1:, :]))
+            else:
+                self.train_metrics.update(met.__name__, met(pred_value[1:, :], gt_value[1:, :]))
         log = self.train_metrics.result()
 
         if self.do_validation:
@@ -97,6 +107,8 @@ class Trainer(BaseTrainer):
         self.valid_metrics.reset()
         pred_value = torch.zeros(1, 1).cuda()
         gt_value = torch.zeros(1, 1).cuda()
+        pred_wave = torch.zeros(1, 240).cuda()
+        gt_wave = torch.zeros(1, 240).cuda()
         with torch.no_grad():
             for batch_idx, (data, target, value, subject) in enumerate(self.data_loader):
                 data, target, value, subject = data.to(self.device), target.to(self.device), value.to(self.device), subject.to(self.device)
@@ -104,21 +116,30 @@ class Trainer(BaseTrainer):
                 output = self.model(data)
                 loss = self.criterion(output, target, value, subject)
                 if len(output) > 1:
+                    pred_wave_temp = output[0]
                     pred_value_temp = postprocess(output[0], fps=30)
                     pred_value_temp = pred_value_temp.cuda()
                 else:
+                    pred_wave_temp = output
                     pred_value_temp = postprocess(output, fps=30)
                     pred_value_temp = pred_value_temp.cuda()
                 gt_val_temp = torch.mean(value, dim=1).view(1, -1).cuda()
-                pred_value = torch.cat((pred_value, pred_value_temp), dim=1).cuda()
-                gt_value = torch.cat((gt_value, gt_val_temp), dim=1).cuda()
+                pred_value = torch.cat((pred_value, pred_value_temp), dim=0).cuda()
+                gt_value = torch.cat((gt_value, gt_val_temp), dim=0).cuda()
+
+                gt_wave_temp = target
+                pred_wave = torch.cat((pred_wave, pred_wave_temp), dim=0).cuda()
+                gt_wave = torch.cat((gt_wave, gt_wave_temp), dim=0).cuda()
 
                 # self.writer.set_step((epoch - 1) * len(self.valid_data_loader) + batch_idx, 'valid')
                 self.valid_metrics.update('loss', loss.item())
                 # self.writer.add_image('input', make_grid(data.cpu(), nrow=8, normalize=True))
         # add histogram of model parameters to the tensorboard
         for met in self.metric_ftns:
-            self.valid_metrics.update(met.__name__, met(pred_value[:, 1:], gt_value[:, 1:]))
+            if met.__name__ == 'r':
+                self.valid_metrics.update(met.__name__, met(pred_wave[1:, :], gt_wave[1:, :]))
+            else:
+                self.valid_metrics.update(met.__name__, met(pred_value[1:, :], gt_value[1:, :]))
         for name, p in self.model.named_parameters():
             self.writer.add_histogram(name, p, bins='auto')
         return self.valid_metrics.result()

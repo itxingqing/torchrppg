@@ -5,18 +5,18 @@ import pandas as pd
 def pearson(x: torch.Tensor, y: torch.Tensor):
     n = x.size(1)
     # simple sums
-    sum1 = torch.sum(x)
-    sum2 = torch.sum(y)
+    sum1 = torch.sum(x, dim=1)
+    sum2 = torch.sum(y, dim=1)
     # sum up the squares
-    sum1_pow = torch.sum(torch.pow(x, 2))
-    sum2_pow = torch.sum(torch.pow(y, 2))
+    sum1_pow = torch.sum(torch.pow(x, 2), dim=1)
+    sum2_pow = torch.sum(torch.pow(y, 2), dim=1)
     # sum up the products
-    p_sum = torch.sum(x * y)
+    p_sum = torch.sum(x * y, dim=1)
     # 分子num，分母den
     num = p_sum - (sum1*sum2/n)
     den = torch.sqrt((sum1_pow-torch.pow(sum1, 2)/n)*(sum2_pow-torch.pow(sum2, 2)/n))
-    if den.data == 0:
-        return 0.0
+    # if den.data == 0:
+    #     return 0.0
     return num/den
 
 
@@ -27,7 +27,7 @@ def mae(pred_value: torch.Tensor, gt_value: torch.Tensor):
 
 def rmse(pred_value: torch.Tensor, gt_value: torch.Tensor):
     with torch.no_grad():
-        return torch.mean(torch.sqrt(torch.square(pred_value - gt_value)))
+        return torch.sqrt(torch.mean(torch.square(pred_value - gt_value)))
 
 
 def std(pred_value: torch.Tensor, gt_value: torch.Tensor):
@@ -35,9 +35,11 @@ def std(pred_value: torch.Tensor, gt_value: torch.Tensor):
         return torch.std(pred_value)
 
 
-def r(pred_value: torch.Tensor, gt_value: torch.Tensor):
+def r(pred_wave: torch.Tensor, gt_wave: torch.Tensor):
     with torch.no_grad():
-        return pearson(pred_value, gt_value)
+        rr = pearson(pred_wave, gt_wave)
+        rr = torch.mean(rr)
+        return rr
 
 
 class MetricTracker:

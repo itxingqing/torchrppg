@@ -65,9 +65,7 @@ def pearson(vector1, vector2):
     return num/den
 
 
-def process_pipe(data, view=False, output="", name=""):
-    fs = 30  # sample rate
-
+def process_pipe(data, view=False, output="", name="", fs=30):
     # moving average
     w_size = int(fs * .5)  # width of moving window
     time = np.linspace(1, len(data), num=len(data))
@@ -79,7 +77,6 @@ def process_pipe(data, view=False, output="", name=""):
     # compute signal envelope
     analytical_signal = np.abs(signal.hilbert(sign))
 
-    fs = 30
     w_size = int(fs)
     # moving averate of envelope
     mt_new, mov_avg = m_avg(mt, analytical_signal, w_size)
@@ -124,6 +121,7 @@ def postprocess(ouput: torch.Tensor, fps: int):
         # FFT
         length = 240
         hr_predict = 0
+        time_interp = int(1000/fps)
         # for index, wave in enumerate([ouput_wave, gt_wave]):
         for index, wave in enumerate([ouput_wave]):
             v_fft = fft(wave)
@@ -135,7 +133,7 @@ def postprocess(ouput: torch.Tensor, fps: int):
 
             time = 0.0
             for i in range(0, length - 1):
-                time += 33
+                time += time_interp
 
             bottom = (int)(0.7 * time / 1000.0)
             top = (int)(2.5 * time / 1000.0)
@@ -182,9 +180,9 @@ def evaluation(model, path, fps=30, visualize=False):
     ouput = model(input)
     # cal HR use ButterFilt and FouierTransfrom
     if len(ouput) > 1:
-        hr_predict = postprocess(ouput[0], fps=30)
+        hr_predict = postprocess(ouput[0], fps=fps)
     else:
-        hr_predict = postprocess(ouput, fps=30)
+        hr_predict = postprocess(ouput, fps=fps)
     hr_predict = hr_predict[0, 0]
     if visualize:
         fig = plt.figure(1)

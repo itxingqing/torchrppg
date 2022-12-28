@@ -92,7 +92,7 @@ def preprocess_png2pth(path_to_png, path_to_gt_HR, path_to_wave, path_to_time, p
             png_path = os.path.join(path_to_png, pngs[j])
             temp_face = cv2.imread(png_path)
             temp_face = cv2.resize(temp_face, (image_size, image_size))
-            temp_face = img_process2(temp_face)
+            temp_face = img_process(temp_face)
             # numpy to tensor
             temp_face = torch.from_numpy(temp_face)
             # (H,W,C) -> (C,H,W)

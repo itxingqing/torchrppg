@@ -48,6 +48,7 @@ def function_complex_absolute(output, Fs, bpm_range=None):
 
     N = output.size()[1]
 
+    Fs = Fs.cuda()
     unit_per_hz = Fs / N
     feasible_bpm = bpm_range / 60.0
     k = feasible_bpm / unit_per_hz

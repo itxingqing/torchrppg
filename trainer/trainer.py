@@ -45,7 +45,7 @@ class Trainer(BaseTrainer):
         pred_wave = torch.zeros(1, 160).cuda()
         gt_wave = torch.zeros(1, 160).cuda()
         for batch_idx, (data, target, value, subject, fps) in enumerate(self.data_loader):
-            data, target, value, subject, fps = data.to(self.device), target.to(self.device), value.to(self.device), subject.to(self.device), fps.to(self.device)
+            data, target, value, subject= data.to(self.device), target.to(self.device), value.to(self.device), subject.to(self.device)
             for op in self.optimizer:
                 op.zero_grad()
             output = self.model(data)
@@ -111,7 +111,7 @@ class Trainer(BaseTrainer):
         gt_wave = torch.zeros(1, 160).cuda()
         with torch.no_grad():
             for batch_idx, (data, target, value, subject, fps) in enumerate(self.data_loader):
-                data, target, value, subject, fps = data.to(self.device), target.to(self.device), value.to(self.device), subject.to(self.device), fps.to(self.device)
+                data, target, value, subject = data.to(self.device), target.to(self.device), value.to(self.device), subject.to(self.device)
 
                 output = self.model(data)
                 loss = self.criterion(output, target, value, subject, fps)

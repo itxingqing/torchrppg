@@ -23,7 +23,7 @@ if __name__ == '__main__':
     for data_path in data_list:
         path = os.path.join(val_pth_dir, data_path)
         scence = data_path.split('_')[0][-2:]
-        hr_predict, hr_gt = evaluation(model, path, fps=fps, visualize=False)
+        hr_predict, hr_gt = evaluation(model, path, length=240, visualize=False)
         print("scence: ", scence, "hr predict: ", hr_predict, "hr gt: ", hr_gt)
         hr_predict_dict[f'{scence}'].append(hr_predict)
         hr_gt_dict[f'{scence}'].append(hr_gt)

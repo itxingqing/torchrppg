@@ -42,21 +42,21 @@ class Trainer(BaseTrainer):
         self.train_metrics.reset()
         pred_value = torch.zeros(1, 1).cuda()
         gt_value = torch.zeros(1, 1).cuda()
-        pred_wave = torch.zeros(1, 240).cuda()
-        gt_wave = torch.zeros(1, 240).cuda()
-        for batch_idx, (data, target, value, subject) in enumerate(self.data_loader):
-            data, target, value, subject = data.to(self.device), target.to(self.device), value.to(self.device), subject.to(self.device)
+        pred_wave = torch.zeros(1, 160).cuda()
+        gt_wave = torch.zeros(1, 160).cuda()
+        for batch_idx, (data, target, value, subject, fps) in enumerate(self.data_loader):
+            data, target, value, subject, fps = data.to(self.device), target.to(self.device), value.to(self.device), subject.to(self.device), fps.to(self.device)
             for op in self.optimizer:
                 op.zero_grad()
             output = self.model(data)
-            loss = self.criterion(output, target, value, subject)
+            loss = self.criterion(output, target, value, subject, fps)
             if len(output) > 1:
                 pred_wave_temp = output[0]
-                pred_value_temp = postprocess(output[0], fps=30)
+                pred_value_temp = postprocess(output[0], fps=fps, length=160)
                 pred_value_temp = pred_value_temp.cuda()
             else:
                 pred_wave_temp = output
-                pred_value_temp = postprocess(output, fps=30)
+                pred_value_temp = postprocess(output, fps=fps, length=160)
                 pred_value_temp = pred_value_temp.cuda()
             gt_val_temp = torch.mean(value, dim=1).view(1, -1).cuda()
             pred_value = torch.cat((pred_value, pred_value_temp), dim=0).cuda()
@@ -107,21 +107,21 @@ class Trainer(BaseTrainer):
         self.valid_metrics.reset()
         pred_value = torch.zeros(1, 1).cuda()
         gt_value = torch.zeros(1, 1).cuda()
-        pred_wave = torch.zeros(1, 240).cuda()
-        gt_wave = torch.zeros(1, 240).cuda()
+        pred_wave = torch.zeros(1, 160).cuda()
+        gt_wave = torch.zeros(1, 160).cuda()
         with torch.no_grad():
-            for batch_idx, (data, target, value, subject) in enumerate(self.data_loader):
-                data, target, value, subject = data.to(self.device), target.to(self.device), value.to(self.device), subject.to(self.device)
+            for batch_idx, (data, target, value, subject, fps) in enumerate(self.data_loader):
+                data, target, value, subject, fps = data.to(self.device), target.to(self.device), value.to(self.device), subject.to(self.device), fps.to(self.device)
 
                 output = self.model(data)
-                loss = self.criterion(output, target, value, subject)
+                loss = self.criterion(output, target, value, subject, fps)
                 if len(output) > 1:
                     pred_wave_temp = output[0]
-                    pred_value_temp = postprocess(output[0], fps=30)
+                    pred_value_temp = postprocess(output[0], fps=fps, length=160)
                     pred_value_temp = pred_value_temp.cuda()
                 else:
                     pred_wave_temp = output
-                    pred_value_temp = postprocess(output, fps=30)
+                    pred_value_temp = postprocess(output, fps=fps, length=160)
                     pred_value_temp = pred_value_temp.cuda()
                 gt_val_temp = torch.mean(value, dim=1).view(1, -1).cuda()
                 pred_value = torch.cat((pred_value, pred_value_temp), dim=0).cuda()

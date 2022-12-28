@@ -153,7 +153,7 @@ class PhysFormerLoss(nn.Module):
         super(PhysFormerLoss, self).__init__()
         self.criterion_Pearson = Neg_Pearson()
 
-    def forward(self, preds, wave, value, subject):
+    def forward(self, preds, wave, value, subject, fps):
         rPPG, Score1, Score2, Score3 = preds
         rPPG = (rPPG - torch.mean(rPPG)) / torch.std(rPPG)  # normalize2
 
@@ -186,7 +186,7 @@ class PhysFormerLoss(nn.Module):
         for bb in range(rPPG.shape[0]):
             gt_hr_mean = torch.mean(value[bb, :])
             loss_distribution_kl, fre_loss_temp, train_mae_temp = cross_entropy_power_spectrum_DLDL_softmax2(
-                rPPG[bb], gt_hr_mean, 30, std=1.0)  # std=1.1
+                rPPG[bb], gt_hr_mean, fps, std=1.0)  # std=1.1
             fre_loss = fre_loss + fre_loss_temp
             kl_loss = kl_loss + loss_distribution_kl
             train_mae = train_mae + train_mae_temp

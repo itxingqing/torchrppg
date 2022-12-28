@@ -6,14 +6,14 @@ from ppg_process_common_function import evaluation, mae, sd, rmse, pearson
 
 if __name__ == '__main__':
     fps = 30
-    model_path = '/media/pxierra/4ddb33c4-42d9-4544-b7b4-796994f061ce/xiongzhuang/1-PycharmProjects/torchrppg/saved/models/RPPG_PhysTransformer_UBFC_PhysFormerLoss/1228_154902/model_best.pth'
-    val_pth_dir = "/media/pxierra/4ddb33c4-42d9-4544-b7b4-796994f061ce/data/pluse/UBFC/TDM_rppg_input/DATASET_2_PTH/val"
+    model_path = '/media/pxierra/4ddb33c4-42d9-4544-b7b4-796994f061ce/xiongzhuang/1-PycharmProjects/torchrppg/saved/models/RPPG_PhysTransformer_VIPL_PhysFormerLoss/1220_143403/model_best.pth'
+    val_pth_dir = "/media/pxierra/e70ff8ce-d5d4-4f52-aa2b-921ff250e5fc/VIPL_PTH/val"
     # evalution
     print("Start eval ... ")
     # load model
     model = ViT_ST_ST_Compact3_TDC_gra_sharp(patches=4, image_h=128, image_w=128, frame=160, dim=96, ff_dim=144,
                                              num_heads=4, num_layers=12, dropout_rate=0.1, theta=0.7)
-    model = model.to('cuda:0')
+    model = model.cuda()
     checkpoint = torch.load(model_path)
     model.load_state_dict(checkpoint['state_dict'])
     model.eval()

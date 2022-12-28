@@ -2,12 +2,15 @@ import cv2
 import torch
 import os
 from skimage.util import img_as_float
+import scipy.signal
 import numpy as np
-from ppg_process_common_function import process_pipe, img_process
+from ppg_process_common_function import process_pipe, img_process, img_process2
+import matplotlib.pyplot as plt
 
 
-def preprocess_png2pth(path_to_png, path_to_gt_HR, path_to_wave, path_to_save, image_size):
+def preprocess_png2pth(path_to_png, path_to_gt_HR, path_to_wave, path_to_time, path_to_save, image_size, length=240):
     # split train and val
+
     subject = path_to_png.split('/')[-3]
     version = path_to_png.split('/')[-2]
     source = path_to_png.split('/')[-1]
@@ -17,30 +20,34 @@ def preprocess_png2pth(path_to_png, path_to_gt_HR, path_to_wave, path_to_save, i
     else:
         save_path = os.path.join(path_to_save, 'val')
 
-    if source == 'source1':
-        fps = 25
-        return
-    elif source == 'source4':
-        fps = 30
-        return
-    else:
-        fps = 30
+    # get fps
+    with open(path_to_time) as f:
+        time_stamp = f.readlines()
+        time_stamp = [int(i) for i in time_stamp]
+        time_stamp = np.array(time_stamp)
+        time_stamp = np.diff(time_stamp)
+        fps = 1000./(np.mean(time_stamp))
+    f.close()
 
     # get pngs
     pngs = os.listdir(path_to_png)
     pngs.sort()
 
-    # get GT label
+    # get GT wave
     with open(path_to_wave) as f:
         gt_wave = f.readlines()
-        # resample
-        float_wave = [float(i) for i in gt_wave[1::2]]
+        float_wave = [float(i) for i in gt_wave[1:]]
     f.close()
+    # resample
+    float_wave_array = np.array(float_wave)
+    float_wave_array = scipy.signal.resample_poly(float_wave_array, up=round(fps), down=60)
+    float_wave = list(float_wave_array)
 
     cut_length = int(1.5 * fps)
     # align png and wave
+    print(f"pngs length is {len(pngs)}, wave length is {len(float_wave)}, fps is {fps}")
     signal_length = min(len(pngs), len(float_wave))
-    if signal_length < 240 - 2*cut_length:
+    if signal_length < length - 2*cut_length:
         return
     pngs = pngs[0:signal_length]
     float_wave = float_wave[0:signal_length]
@@ -53,21 +60,25 @@ def preprocess_png2pth(path_to_png, path_to_gt_HR, path_to_wave, path_to_save, i
     with open(path_to_gt_HR) as f:
         gt_HR = f.readlines()
         gt_HR = gt_HR[1:]
+        gt_HR = [float(i) for i in gt_HR]
         # resample
         float_hr_value = [0]*signal_length
 
         for hr_index in range(0, len(float_hr_value)):
-            if hr_index < len(gt_HR) * fps:
-                float_hr_value[hr_index] = gt_HR[hr_index//fps]  # set value to every png
+            if hr_index < len(gt_HR) * round(fps):
+                float_hr_value[hr_index] = gt_HR[hr_index//round(fps)]  # set value to every png
             else:
                 float_hr_value[hr_index] = float_hr_value[hr_index-1]  # pad
+            if float_hr_value[hr_index] > 254:
+                print(f"hr value is {float_hr_value[hr_index]}")
+                float_hr_value[hr_index] = float_hr_value[hr_index-1]
         float_hr_value = float_hr_value[cut_length:-cut_length]
     f.close()
 
     # save data
     frame_length = len(pngs)  # subject frame length
-    segment_length = 240  # time length every input data
-    stride = 240
+    segment_length = length  # time length every input data
+    stride = length
     # H = [(输入大小 - 卷积核大小 + 2 * P) / 步长] + 1
     n_segment = (frame_length - segment_length) // stride + 1  # subject segment length
 
@@ -81,7 +92,7 @@ def preprocess_png2pth(path_to_png, path_to_gt_HR, path_to_wave, path_to_save, i
             png_path = os.path.join(path_to_png, pngs[j])
             temp_face = cv2.imread(png_path)
             temp_face = cv2.resize(temp_face, (image_size, image_size))
-            temp_face = img_process(temp_face)
+            temp_face = img_process2(temp_face)
             # numpy to tensor
             temp_face = torch.from_numpy(temp_face)
             # (H,W,C) -> (C,H,W)
@@ -89,7 +100,7 @@ def preprocess_png2pth(path_to_png, path_to_gt_HR, path_to_wave, path_to_save, i
             segment_face[j - i * stride, :, :, :] = temp_face
             float_label_detrend[j - i * stride] = float_wave[j]
             float_hr_value_repeat[j - i * stride] = float_hr_value[j]
-        save_pth_path = save_path + '/' + subject + version + 's' + source[-1] + '_' + str(i) + '.pth'
+        save_pth_path = save_path + '/' + subject + version + 's' + source[-1] + 'fps' + str(fps) + '_' + str(i) + '.pth'
         segment_face = torch.permute(segment_face, (1, 0, 2, 3))
         data['face'] = segment_face
         # normlized wave
@@ -102,6 +113,7 @@ def preprocess_png2pth(path_to_png, path_to_gt_HR, path_to_wave, path_to_save, i
         # segment_label = torch.sub(segment_label, d_min).true_divide(d_max - d_min)
         # segment_label = (segment_label - 0.5).true_divide(0.5)
         data['wave'] = (segment_label, int(subject[1:]))
+        data['fps'] = fps
         # hr value
         data['value'] = float_hr_value_repeat
 
@@ -114,10 +126,12 @@ if __name__ == '__main__':
     trackfail_txt = os.path.join(data_dir, 'lighttrack_fail.txt')
     gt_HR_paths = os.path.join(data_dir, 'path_to_gt_HR.txt')
     wave_paths = os.path.join(data_dir, 'path_to_wave.txt')
+    time_paths = os.path.join(data_dir, 'path_to_time.txt')
 
     png_paths = os.path.join(data_dir, 'path_to_png.txt')
 
     image_size = 128
+    frame_length = 160
     with open(gt_HR_paths, 'r') as f_gt:
         gt_HR_list = f_gt.readlines()
     f_gt.close()
@@ -125,6 +139,10 @@ if __name__ == '__main__':
     with open(wave_paths, 'r') as f_gt:
         wave_list = f_gt.readlines()
     f_gt.close()
+
+    with open(time_paths, 'r') as f_time:
+        time_list = f_time.readlines()
+    f_time.close()
 
     with open(png_paths, 'r') as f_png:
         png_list = f_png.readlines()
@@ -137,13 +155,13 @@ if __name__ == '__main__':
     assert len(gt_HR_list) == len(wave_list)
 
     print("Start generate pth from pngs ...")
-    list_png_gt = zip(png_list, gt_HR_list, wave_list)
+    list_png_gt = zip(png_list, gt_HR_list, wave_list, time_list)
     length = len(gt_HR_list)
-    for i, (png_path, gt_HR_path, wave_path) in enumerate(list_png_gt):
+    for i, (png_path, gt_HR_path, wave_path, time_path) in enumerate(list_png_gt):
         print(png_path, f"({i + 1}/{length})")
         pngs = os.listdir(png_path.strip())
-        if pngs and (gt_HR_path[:-9] + 'video.avi\n') not in trackfail_list:  # if pngs is not empyt
-            preprocess_png2pth(png_path.strip(), gt_HR_path.strip(), wave_path.strip(), save_pth_dir, image_size)
+        if pngs and (gt_HR_path[:-9] + 'video.avi\n') not in trackfail_list and time_path != '\n':  # if pngs is not empyt
+            preprocess_png2pth(png_path.strip(), gt_HR_path.strip(), wave_path.strip(), time_path.strip(), save_pth_dir, image_size, frame_length)
         else:
             print(f"Skip {gt_HR_path}")
     print("Generate pth data finsh!")

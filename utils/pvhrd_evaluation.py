@@ -20,16 +20,19 @@ if __name__ == '__main__':
     data_list = os.listdir(val_pth_dir)
     hr_predict_dict = {'v1': [], 'v2': [], 'v3': [], 'v4': [], 'v5': [], 'v6': [], 'v7': []}
     hr_gt_dict = {'v1': [], 'v2': [], 'v3': [], 'v4': [], 'v5': [], 'v6': [], 'v7': []}
+    wave_pearson = {'v1': [], 'v2': [], 'v3': [], 'v4': [], 'v5': [], 'v6': [], 'v7': []}
     for data_path in data_list:
         path = os.path.join(val_pth_dir, data_path)
         scence = data_path.split('_')[0][-2:]
-        hr_predict, hr_gt = evaluation(model, path, length=240, visualize=False)
+        hr_predict, hr_gt, wave_predict, wave_gt = evaluation(model, path, length=240, visualize=False)
+        pearson_value = pearson(wave_predict, wave_gt)
         print("scence: ", scence, "hr predict: ", hr_predict, "hr gt: ", hr_gt)
         hr_predict_dict[f'{scence}'].append(hr_predict)
         hr_gt_dict[f'{scence}'].append(hr_gt)
+        wave_pearson[f'{scence}'].append(pearson_value)
     for vx in ['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7']:
         sd_result = sd(hr_predict_dict[f'{vx}'])
         rmse_result = rmse(hr_predict_dict[f'{vx}'], hr_gt_dict[f'{vx}'])
         mae_result = mae(hr_predict_dict[f'{vx}'], hr_gt_dict[f'{vx}'])
-        pearson_result = pearson(hr_predict_dict[f'{vx}'], hr_gt_dict[f'{vx}'])
+        pearson_result = sum(wave_pearson[f'{vx}']) / len(wave_pearson[f'{vx}'])
         print(f"{vx} ", "sd: ", sd_result, "rmse: ", rmse_result, "mae: ", mae_result, "pearson: ", pearson_result)

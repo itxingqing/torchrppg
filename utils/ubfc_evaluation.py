@@ -28,13 +28,15 @@ if __name__ == '__main__':
     data_list = os.listdir(val_pth_dir)
     video_level_hr_predict_list = []
     video_level_hr_gt_list = []
+    wave_pearson = []
     data_list.sort()
     hr_predict_dict = {'subject01': [], 'subject04': [], 'subject05': [], 'subject08': [], 'subject09': [], 'subject10': [], 'subject12': [], 'subject13': []}
     hr_gt_dict = {'subject01': [], 'subject04': [], 'subject05': [], 'subject08': [], 'subject09': [], 'subject10': [], 'subject12': [], 'subject13': []}
     for data_path in data_list:
         path = os.path.join(val_pth_dir, data_path)
         if data_path.split('_')[0] != 'subject11':
-            hr_predict, hr_gt = evaluation(model, path, length=160, visualize=False)
+            hr_predict, hr_gt, wave_predict, wave_gt = evaluation(model, path, length=240, visualize=True)
+            wave_pearson.append(pearson(wave_predict, wave_gt))
             print("data_path: ", data_path, "hr predict: ", hr_predict, "hr gt: ", hr_gt)
             hr_predict_dict[data_path.split('_')[0]].append(hr_predict)
             hr_gt_dict[data_path.split('_')[0]].append(hr_gt)
@@ -44,6 +46,6 @@ if __name__ == '__main__':
     sd = sd(video_level_hr_predict_list)
     rmse_result = rmse(video_level_hr_predict_list, video_level_hr_gt_list)
     mae_result = mae(video_level_hr_predict_list, video_level_hr_gt_list)
-    pearson_result = pearson(video_level_hr_predict_list, video_level_hr_gt_list)
+    pearson_result = sum(wave_pearson) / len(wave_pearson)
     print("sd: ", sd, "rmse: ", rmse_result, "mae: ", mae_result, "pearson: ", pearson_result)
     print("Finsh eval! ")

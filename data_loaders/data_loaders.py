@@ -21,7 +21,10 @@ class UBFCDataset(Dataset):
         face_frames = data['face']
         gt_label, subject = data['wave']
         gt_value = data['value']
-        fps = data['fps']
+        if 'fps' not in data.keys():
+            fps = 30
+        else:
+            fps = data['fps']
         gt_value = torch.from_numpy(gt_value.copy()).float()
         return face_frames, gt_label, gt_value, subject, fps
 

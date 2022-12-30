@@ -170,3 +170,26 @@ class NPSNR(nn.Module):
 
         loss = loss / rppg.shape[0]
         return loss
+
+
+class STFTLoss(nn.Module):
+    def __init__(self, subject_number=10):
+        super(STFTLoss, self).__init__()
+        self.mae = nn.L1Loss()
+
+    def stft_similarity_loss(self, predictions, targets):
+        cos_sim1 = nn.CosineSimilarity(dim=1, eps=1e-6)
+        win = torch.hann_window(60).to('cuda:0')
+        pred = torch.stft(predictions, n_fft=60, hop_length=60 // 4, window=win, return_complex=True)
+        tar = torch.stft(targets, n_fft=60, hop_length=60 // 4, window=win, return_complex=True)
+        return 1 - torch.mean(cos_sim1(abs(pred), abs(tar)))
+
+    def forward(self, preds, labels, value, subject, fps):
+        oup = self.stft_similarity_loss(preds, labels)
+        # fig = plt.figure(1)
+        # plt.plot(y[0, :].detach().numpy(), '-')
+        # plt.plot(y_hat[0, :].detach().numpy(), '--')
+        # plt.draw()
+        # plt.pause(0.5)
+        # plt.close(fig)
+        return oup

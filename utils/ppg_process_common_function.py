@@ -1,5 +1,7 @@
 import matplotlib.pyplot as plt
 import os
+
+import scipy.signal
 from scipy.signal import butter, filtfilt, detrend
 from scipy import  signal
 import numpy as np
@@ -46,6 +48,10 @@ def img_process(img):
     vidLxL[vidLxL < (1 / 255)] = 1 / 255  # 把数据归一化到1/255～1之间
     return vidLxL
 
+def img_process2(img):
+    img = (img - 127.5) / 128
+    return img
+
 
 def pearson(vector1, vector2):
     n = len(vector1)
@@ -63,6 +69,16 @@ def pearson(vector1, vector2):
     if den == 0:
         return 0.0
     return num/den
+
+# https://blog.csdn.net/falwat/article/details/127142806
+def bpfilter64(s2, fs):
+
+    minfq = 0.8*2/fs
+    maxfq = 3*2/fs
+    firl_len = round(len(s2)/10)
+    bpfilter = scipy.signal.firwin(firl_len, [minfq, maxfq], pass_zero='bandpass')
+    s2f = scipy.signal.filtfilt(bpfilter, 1, s2)
+    return s2f
 
 
 def process_pipe(data, view=False, output="", name="", fs=30):
@@ -110,7 +126,7 @@ def process_pipe(data, view=False, output="", name="", fs=30):
     return mt_new, signal_pure
 
 
-def postprocess(ouput: torch.Tensor, fps: int):
+def postprocess(ouput: torch.Tensor, fps, length=240):
     # cal HR use ButterFilt and FouierTransfrom
     # ButterFilt
     with torch.no_grad():
@@ -119,7 +135,6 @@ def postprocess(ouput: torch.Tensor, fps: int):
         [b_pulse, a_pulse] = butter(3, [0.75 / fps * 2, 2.5 / fps * 2], btype='bandpass')
         ouput_wave = filtfilt(b_pulse, a_pulse, ouput_wave)
         # FFT
-        length = 240
         hr_predict = 0
         time_interp = int(1000/fps)
         # for index, wave in enumerate([ouput_wave, gt_wave]):
@@ -168,25 +183,45 @@ def postprocess(ouput: torch.Tensor, fps: int):
     return hr_predict
 
 
-def evaluation(model, path, fps=30, visualize=False):
+# def postprocess_method2(ouput: torch.Tensor, fps, length=240):
+#     # cal HR use ButterFilt and FouierTransfrom
+#     # ButterFilt
+#     with torch.no_grad():
+#         if type(fps) != int:
+#             fps = fps.cpu()
+#         ouput_wave = ouput[0,].cpu().detach().numpy()
+#         signal_filtered = bpfilter64(ouput_wave, fps)
+#         signal_filtered = (signal_filtered - np.mean(signal_filtered)) / np.std(signal_filtered)
+#
+#         signal_filtered = scipy.signal.welch(signal_filtered, )
+#             hr_predict = hr
+#             hr_predict = torch.tensor([hr_predict])
+#             hr_predict = hr_predict.view(1, -1)
+#     return hr_predict
+
+
+def evaluation(model, path, length=240, visualize=False):
     data = torch.load(path)
     input = data['face']
+    input = input[:, 0:length, :, :]
     input = torch.unsqueeze(input, dim=0)
     gt, subject = data['wave']
-    hr_gt = np.mean(data['value'])
+    gt = gt[0:length]
+    fps = data['fps']
+    hr_gt = np.mean(data['value'][0:length])
     gt = torch.unsqueeze(gt, dim=0)
     # inference
     input = input.cuda()
     ouput = model(input)
     # cal HR use ButterFilt and FouierTransfrom
     if len(ouput) > 1:
-        hr_predict = postprocess(ouput[0], fps=fps)
+        hr_predict = postprocess(ouput[0], fps=fps, length=length)
     else:
-        hr_predict = postprocess(ouput, fps=fps)
+        hr_predict = postprocess(ouput, fps=fps, length=length)
     hr_predict = hr_predict[0, 0]
     if visualize:
         fig = plt.figure(1)
-        plt.plot(ouput[0, ].cpu().detach().numpy(), '-')
+        plt.plot(ouput[0][0, ].cpu().detach().numpy(), '-')
         plt.plot(gt[0, ].cpu().detach().numpy(), '--')
         plt.draw()
         plt.pause(2)

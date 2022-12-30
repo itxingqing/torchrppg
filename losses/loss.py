@@ -56,7 +56,7 @@ class MSELoss(nn.Module):
         super(MSELoss, self).__init__()
         self.mse = nn.MSELoss()
 
-    def forward(self, y, y_hat, subject):
+    def forward(self, y, y_hat, value, subject, fps):
         oup = self.mse(y[0], y_hat)
         # fig = plt.figure(1)
         # plt.plot(y[0, :200].cpu().detach().numpy(), '-')

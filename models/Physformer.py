@@ -242,7 +242,9 @@ class ViT_ST_ST_Compact3_TDC_gra_sharp(nn.Module):
         self, 
         name: Optional[str] = None, 
         pretrained: bool = False, 
-        # patches: int = 16,
+        patches: int = 16,
+        image_h: int = 128,
+        image_w: int = 128,
         dim: int = 768,
         ff_dim: int = 3072,
         num_heads: int = 12,
@@ -267,8 +269,8 @@ class ViT_ST_ST_Compact3_TDC_gra_sharp(nn.Module):
 
         # Image and patch sizes
         # t, h, w = as_tuple(image_size)  # tube sizes
-        t, h, w = 240, 128, 128
-        ft, fh, fw = 4, 4, 4  # patch sizes, ft = 4 ==> 160/4=40
+        t, h, w = frame, image_h, image_w
+        ft, fh, fw = patches, patches, patches  # patch sizes, ft = 4 ==> 160/4=40
         gt, gh, gw = t//ft, h // fh, w // fw  # number of patches
         seq_len = gh * gw * gt
 

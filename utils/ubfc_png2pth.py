@@ -2,10 +2,11 @@ import cv2
 import torch
 import os
 import numpy as np
-from ppg_process_common_function import process_pipe, img_process
+from ppg_process_common_function import process_pipe, img_process, img_process2
+import threading
 
 
-def preprocess_png2pth(path_to_png, path_to_gt, path_to_save, subject, image_size):
+def preprocess_png2pth(path_to_png, path_to_gt, path_to_save, subject, image_size, length):
     # split train and val
     if int(subject[-2:]) in [1, 4, 5, 8, 9, 10, 11, 12, 13]:
         save_path = os.path.join(path_to_save, 'val')
@@ -28,8 +29,8 @@ def preprocess_png2pth(path_to_png, path_to_gt, path_to_save, subject, image_siz
     pngs.sort()
     pngs = pngs[45:-45]
     frame_length = len(pngs)  # subject frame length
-    segment_length = 240  # time length every input data
-    stride = 240
+    segment_length = length  # time length every input data
+    stride = length
     # H = [(输入大小 - 卷积核大小 + 2 * P) / 步长] + 1
     n_segment = (frame_length - segment_length) // stride + 1  # subject segment length
 
@@ -65,8 +66,9 @@ def preprocess_png2pth(path_to_png, path_to_gt, path_to_save, subject, image_siz
         # segment_label = (segment_label - 0.5).true_divide(0.5)
         data['wave'] = (segment_label, int(subject[-2:]))
         # hr value
+        data['fps'] = 30.
         data['value'] = float_hr_value_repeat
-        print(int(subject[-2:]), ' ', data['value'])
+        # print(int(subject[-2:]), ' ', data['value'])
         if int(subject[-2:]) not in [11, 18, 20, 24]:
             torch.save(data, save_pth_path)
 
@@ -76,13 +78,29 @@ if __name__ == '__main__':
     dataset_gt_dir = "/media/pxierra/4ddb33c4-42d9-4544-b7b4-796994f061ce/data/pluse/UBFC/DATASET_2"
     save_pth_dir = "/media/pxierra/4ddb33c4-42d9-4544-b7b4-796994f061ce/data/pluse/UBFC/TDM_rppg_input/DATASET_2_PTH"
     image_size = 128
+    frame_length = 160
     subjects = os.listdir(dataset_face_dir)
     subjects.sort()
     print("Start generate pth from pngs ...")
     length = len(subjects)
     for i, subject in enumerate(subjects):
-        print(subject, f"({i+1}/{length})")
-        png_dir = os.path.join(dataset_face_dir, subject)
-        gt_path = os.path.join(dataset_gt_dir, subject, 'ground_truth.txt')
-        preprocess_png2pth(png_dir, gt_path, save_pth_dir, subject, image_size)
+        if i%3 == 2:
+            print(subjects[i-2], f"({i - 2 +1}/{length})")
+            print(subjects[i-1], f"({i -1 +1}/{length})")
+            print(subjects[i], f"({i+1}/{length})")
+            png_dir1 = os.path.join(dataset_face_dir, subjects[i-2])
+            gt_path1 = os.path.join(dataset_gt_dir, subjects[i-2], 'ground_truth.txt')
+            png_dir2 = os.path.join(dataset_face_dir, subjects[i-1])
+            gt_path2 = os.path.join(dataset_gt_dir, subjects[i-1], 'ground_truth.txt')
+            png_dir3 = os.path.join(dataset_face_dir, subjects[i])
+            gt_path3 = os.path.join(dataset_gt_dir, subjects[i], 'ground_truth.txt')
+            t1 = threading.Thread(target=preprocess_png2pth, args=(png_dir1, gt_path1, save_pth_dir, subjects[i-2], image_size, frame_length))
+            t2 = threading.Thread(target=preprocess_png2pth, args=(png_dir2, gt_path2, save_pth_dir, subjects[i-1], image_size, frame_length))
+            t3 = threading.Thread(target=preprocess_png2pth,  args=(png_dir3, gt_path3, save_pth_dir, subjects[i], image_size, frame_length))
+            t1.start()
+            t2.start()
+            t3.start()
+            t1.join()
+            t2.join()
+            t3.join()
     print("Generate pth data finsh!")

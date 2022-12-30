@@ -3,10 +3,11 @@ import torch
 import os
 from skimage.util import img_as_float
 import numpy as np
-from ppg_process_common_function import process_pipe, img_process
+from ppg_process_common_function import process_pipe, img_process, img_process2
+import threading
 
 
-def preprocess_png2pth(path_to_png, path_to_gt, path_to_save, image_size):
+def preprocess_png2pth(path_to_png, path_to_gt, path_to_save, image_size, length=240):
     # split train and val
     subject = path_to_png.split('/')[-2]
     version = path_to_png.split('/')[-1]
@@ -31,8 +32,8 @@ def preprocess_png2pth(path_to_png, path_to_gt, path_to_save, image_size):
     pngs.sort()
     pngs = pngs[45:-45]
     frame_length = len(pngs)  # subject frame length
-    segment_length = 240  # time length every input data
-    stride = 240
+    segment_length = length  # time length every input data
+    stride = length
     # H = [(输入大小 - 卷积核大小 + 2 * P) / 步长] + 1
     n_segment = (frame_length - segment_length) // stride + 1  # subject segment length
 
@@ -79,6 +80,7 @@ if __name__ == '__main__':
     gt_paths = os.path.join(data_dir, 'path_to_gt.txt')
     png_paths = os.path.join(data_dir, 'path_to_png.txt')
     image_size = 128
+    frame_length = 240
     with open(gt_paths, 'r') as f_gt:
         gt_list = f_gt.readlines()
     f_gt.close()
@@ -91,5 +93,5 @@ if __name__ == '__main__':
     length = len(gt_list)
     for i, (png_path, gt_path) in enumerate(list_png_gt):
         print(png_path, f"({i + 1}/{length})")
-        preprocess_png2pth(png_path.strip(), gt_path.strip(), save_pth_dir, image_size)
+        preprocess_png2pth(png_path.strip(), gt_path.strip(), save_pth_dir, image_size, frame_length)
     print("Generate pth data finsh!")

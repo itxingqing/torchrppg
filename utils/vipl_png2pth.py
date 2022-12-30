@@ -46,11 +46,21 @@ def preprocess_png2pth(path_to_png, path_to_gt_HR, path_to_wave, path_to_time, p
     cut_length = int(1.5 * fps)
     # align png and wave
     print(f"pngs length is {len(pngs)}, wave length is {len(float_wave)}, fps is {fps}")
+    if len(pngs) > len(float_wave):
+        new_float_wave = float_wave.copy()
+        a = len(pngs) - len(float_wave)
+        for i in range(a):
+            index = round(fps) * (i+1)
+            if index < len(float_wave):
+                value = (float_wave[index-1]+float_wave[index]) / 2
+                new_float_wave.insert(index, value)
+        float_wave = new_float_wave
     signal_length = min(len(pngs), len(float_wave))
-    if signal_length < length - 2*cut_length:
+    if signal_length < length - 2 * cut_length:
         return
     pngs = pngs[0:signal_length]
     float_wave = float_wave[0:signal_length]
+    print(f"after align, pngs length is {len(pngs)}, wave length is {len(float_wave)}, fps is {fps}")
 
     # process png and wave
     mt_new, float_wave = process_pipe(float_wave, view=False, output="", name="", fs=fps)

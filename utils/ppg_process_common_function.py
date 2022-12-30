@@ -126,12 +126,11 @@ def process_pipe(data, view=False, output="", name="", fs=30):
     return mt_new, signal_pure
 
 
-def postprocess(ouput: torch.Tensor, fps, length=240):
+def postprocess(ouput, fps, length=240):
     # cal HR use ButterFilt and FouierTransfrom
     # ButterFilt
     with torch.no_grad():
-        ouput_wave = ouput[0, ].cpu().detach().numpy()
-        ouput_wave = detrend(ouput_wave, type == 'linear')
+        ouput_wave = detrend(ouput, type == 'linear')
         [b_pulse, a_pulse] = butter(3, [0.75 / fps * 2, 2.5 / fps * 2], btype='bandpass')
         ouput_wave = filtfilt(b_pulse, a_pulse, ouput_wave)
         # FFT
@@ -215,16 +214,19 @@ def evaluation(model, path, length=240, visualize=False):
     ouput = model(input)
     # cal HR use ButterFilt and FouierTransfrom
     if len(ouput) > 1:
-        hr_predict = postprocess(ouput[0], fps=fps, length=length)
+        wave_predict = ouput[0][0, ].cpu().detach().numpy()
     else:
-        hr_predict = postprocess(ouput, fps=fps, length=length)
+        wave_predict = ouput[0, ].cpu().detach().numpy()
+    hr_predict = postprocess(wave_predict, fps=fps, length=length)
+    hr_predict = hr_predict.cpu().detach().numpy()
+    wave_gt = gt[0, ].cpu().detach().numpy()
     hr_predict = hr_predict[0, 0]
     if visualize:
         fig = plt.figure(1)
-        plt.plot(ouput[0][0, ].cpu().detach().numpy(), '-')
-        plt.plot(gt[0, ].cpu().detach().numpy(), '--')
+        plt.plot(wave_predict, '-')
+        plt.plot(wave_gt, '--')
         plt.draw()
         plt.pause(2)
         plt.close(fig)
 
-    return hr_predict, hr_gt
+    return hr_predict, hr_gt, wave_predict, wave_gt

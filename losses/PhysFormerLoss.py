@@ -155,7 +155,7 @@ class PhysFormerLoss(nn.Module):
         self.criterion_Pearson = Neg_Pearson()
 
     def forward(self, preds, wave, value, subject, fps):
-        rPPG, Score1, Score2, Score3 = preds
+        rPPG  = preds
         rPPG = (rPPG - torch.mean(rPPG)) / torch.std(rPPG)  # normalize2
 
         # Neg_Pearson

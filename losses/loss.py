@@ -88,7 +88,7 @@ class Neg_Pearson(nn.Module):  # Pearson range [-1, 1] so if < 0, abs|loss| ; if
         super(Neg_Pearson, self).__init__()
         return
 
-    def forward(self, preds, labels, subject):  # tensor [Batch, Temporal]
+    def forward(self, preds, labels, value, subject, fps):  # tensor [Batch, Temporal]
         loss = 0
         for i in range(preds.shape[0]):
             sum_x = torch.sum(preds[i])  # x

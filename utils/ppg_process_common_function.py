@@ -9,6 +9,7 @@ import torch
 from scipy.fftpack import fft
 import math
 from skimage.util import img_as_float
+import heartpy
 
 m_avg = lambda t, x, w: (np.asarray([t[i] for i in range(w, len(x) - w)]),
                          np.convolve(x, np.ones((2 * w + 1,)) / (2 * w + 1),
@@ -126,60 +127,63 @@ def process_pipe(data, view=False, output="", name="", fs=30):
     return mt_new, signal_pure
 
 
-def postprocess(ouput, fps, length=240):
+def postprocess(ouput, fps, length=240, method='peakdetection'):
     # cal HR use ButterFilt and FouierTransfrom
     # ButterFilt
-    with torch.no_grad():
-        ouput_wave = detrend(ouput, type == 'linear')
-        [b_pulse, a_pulse] = butter(3, [0.75 / fps * 2, 2.5 / fps * 2], btype='bandpass')
-        ouput_wave = filtfilt(b_pulse, a_pulse, ouput_wave)
-        # FFT
-        hr_predict = 0
-        time_interp = int(1000/fps)
-        # for index, wave in enumerate([ouput_wave, gt_wave]):
-        for index, wave in enumerate([ouput_wave]):
-            v_fft = fft(wave)
-            v_FA = np.zeros((length,))
-            v_FA[0] = v_fft[0].real * v_fft[0].real
-            for i in range(1, int(length / 2)):
-                v_FA[i] = v_fft[i].real * v_fft[i].real + v_fft[i].imag * v_fft[i].imag
-            v_FA[int(length / 2)] = v_fft[int(length / 2)].real * v_fft[int(length / 2)].real
+    if method == 'dft':
+        with torch.no_grad():
+            ouput_wave = detrend(ouput, type == 'linear')
+            [b_pulse, a_pulse] = butter(3, [0.75 / fps * 2, 2.5 / fps * 2], btype='bandpass')
+            ouput_wave = filtfilt(b_pulse, a_pulse, ouput_wave)
+            # FFT
+            hr_predict = 0
+            time_interp = int(1000/fps)
+            # for index, wave in enumerate([ouput_wave, gt_wave]):
+            for index, wave in enumerate([ouput_wave]):
+                v_fft = fft(wave)
+                v_FA = np.zeros((length,))
+                v_FA[0] = v_fft[0].real * v_fft[0].real
+                for i in range(1, int(length / 2)):
+                    v_FA[i] = v_fft[i].real * v_fft[i].real + v_fft[i].imag * v_fft[i].imag
+                v_FA[int(length / 2)] = v_fft[int(length / 2)].real * v_fft[int(length / 2)].real
 
-            time = 0.0
-            for i in range(0, length - 1):
-                time += time_interp
+                time = 0.0
+                for i in range(0, length - 1):
+                    time += time_interp
 
-            bottom = (int)(0.7 * time / 1000.0)
-            top = (int)(2.5 * time / 1000.0)
-            if top > length / 2:
-                top = length / 2
-            i_maxpower = 0
-            maxpower = 0.0
-            for i in range(bottom - 2, top - 2 + 1):
-                if maxpower < v_FA[i]:
-                    maxpower = v_FA[i]
-                    i_maxpower = i
+                bottom = (int)(0.7 * time / 1000.0)
+                top = (int)(2.5 * time / 1000.0)
+                if top > length / 2:
+                    top = length / 2
+                i_maxpower = 0
+                maxpower = 0.0
+                for i in range(bottom - 2, top - 2 + 1):
+                    if maxpower < v_FA[i]:
+                        maxpower = v_FA[i]
+                        i_maxpower = i
 
-            noise_power = 0.0
-            signal_power = 0.0
-            signal_moment = 0.0
-            for i in range(bottom, top + 1):
-                if (i >= i_maxpower - 2) and (i <= i_maxpower + 2):
-                    signal_power += v_FA[i]
-                    signal_moment += i * v_FA[i]
-                else:
-                    noise_power += v_FA[i]
+                noise_power = 0.0
+                signal_power = 0.0
+                signal_moment = 0.0
+                for i in range(bottom, top + 1):
+                    if (i >= i_maxpower - 2) and (i <= i_maxpower + 2):
+                        signal_power += v_FA[i]
+                        signal_moment += i * v_FA[i]
+                    else:
+                        noise_power += v_FA[i]
 
-            if signal_power > 0.01 and noise_power > 0.01:
-                snr = 10.0 * math.log10(signal_power / noise_power) + 1
-                bias = i_maxpower - (signal_moment / signal_power)
-                snr *= (1.0 / (1.0 + bias * bias))
+                if signal_power > 0.01 and noise_power > 0.01:
+                    snr = 10.0 * math.log10(signal_power / noise_power) + 1
+                    bias = i_maxpower - (signal_moment / signal_power)
+                    snr *= (1.0 / (1.0 + bias * bias))
 
-            hr = (signal_moment / signal_power) * 60000.0 / time
-            hr_predict = hr
-            hr_predict = torch.tensor([hr_predict])
-            hr_predict = hr_predict.view(1, -1)
-    return hr_predict
+                hr = (signal_moment / signal_power) * 60000.0 / time
+    elif method == 'peakdetection':
+        wd, m = heartpy.process(ouput, sample_rate=fps, clean_rr=True)
+        hr = m['bpm']
+    else:
+        raise ValueError('method not understood! Needs to be either \'peakdetection\' or \'dft\', passed: %s' % method)
+    return hr
 
 
 # def postprocess_method2(ouput: torch.Tensor, fps, length=240):
@@ -199,7 +203,7 @@ def postprocess(ouput, fps, length=240):
 #     return hr_predict
 
 
-def evaluation(model, path, length=240, visualize=False):
+def evaluation(model, path, length=240, visualize=False, method='peakdetection'):
     data = torch.load(path)
     input = data['face']
     input = input[:, 0:length, :, :]
@@ -217,10 +221,9 @@ def evaluation(model, path, length=240, visualize=False):
         wave_predict = ouput[0][0, ].cpu().detach().numpy()
     else:
         wave_predict = ouput[0, ].cpu().detach().numpy()
-    hr_predict = postprocess(wave_predict, fps=fps, length=length)
-    hr_predict = hr_predict.cpu().detach().numpy()
+    hr_predict = postprocess(wave_predict, fps=fps, length=length, method=method)
+    hr_predict_from_wave_gt = postprocess(gt[0, ].cpu().detach().numpy(), fps=fps, length=length, method=method)
     wave_gt = gt[0, ].cpu().detach().numpy()
-    hr_predict = hr_predict[0, 0]
     if visualize:
         fig = plt.figure(1)
         plt.plot(wave_predict, '-')

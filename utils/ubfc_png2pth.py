@@ -8,7 +8,7 @@ import threading
 
 def preprocess_png2pth(path_to_png, path_to_gt, path_to_save, subject, image_size, length):
     # split train and val
-    if int(subject[-2:]) in [1, 4, 5, 8, 9, 10, 11, 12, 13]:
+    if int(subject[-2:]) >= 38:  # last 12 subject to test
         save_path = os.path.join(path_to_save, 'val')
     else:
         save_path = os.path.join(path_to_save, 'train')
@@ -20,14 +20,14 @@ def preprocess_png2pth(path_to_png, path_to_gt, path_to_save, subject, image_siz
         gtHr = gt[1].split()
         float_wave = [float(i) for i in gtTrace]
         float_hr_value = [float(i) for i in gtHr]
-        float_hr_value = float_hr_value[45:-45]
-        mt_new, float_wave = process_pipe(float_wave, view=False, output="", name="")
+        # float_hr_value = float_hr_value[45:-45]
+        # mt_new, float_wave = process_pipe(float_wave, view=False, output="", name="")
     f.close()
 
     # save data
     pngs = os.listdir(path_to_png)
     pngs.sort()
-    pngs = pngs[45:-45]
+    # pngs = pngs[45:-45]
     frame_length = len(pngs)  # subject frame length
     segment_length = length  # time length every input data
     stride = length
@@ -74,11 +74,11 @@ def preprocess_png2pth(path_to_png, path_to_gt, path_to_save, subject, image_siz
 
 
 if __name__ == '__main__':
-    dataset_face_dir = "/media/pxierra/4ddb33c4-42d9-4544-b7b4-796994f061ce/data/pluse/UBFC/TDM_rppg_input/DATASET_2_FACE"
+    dataset_face_dir = "/media/pxierra/e70ff8ce-d5d4-4f52-aa2b-921ff250e5fc/UBFC_rPPG_DATASET_2_FACE"
     dataset_gt_dir = "/media/pxierra/4ddb33c4-42d9-4544-b7b4-796994f061ce/data/pluse/UBFC/DATASET_2"
     save_pth_dir = "/media/pxierra/4ddb33c4-42d9-4544-b7b4-796994f061ce/data/pluse/UBFC/TDM_rppg_input/DATASET_2_PTH"
     image_size = 128
-    frame_length = 160
+    frame_length = 240
     subjects = os.listdir(dataset_face_dir)
     subjects.sort()
     print("Start generate pth from pngs ...")

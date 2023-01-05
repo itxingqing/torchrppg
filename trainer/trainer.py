@@ -58,8 +58,8 @@ class Trainer(BaseTrainer):
                 pred_wave_temp = output[0]
             else:
                 pred_wave_temp = output
-            pred_value_temp = postprocess(pred_wave_temp.cpu().detach().numpy()[0, :], fps=fps, length=wave_length)
-            pred_value_temp = pred_value_temp.cuda()
+            pred_value_temp = postprocess(pred_wave_temp.cpu().detach().numpy()[0, :], fps=float(fps), length=wave_length, method='dft')
+            pred_value_temp = torch.tensor([pred_value_temp]).unsqueeze(dim=0).cuda()
             gt_val_temp = torch.mean(value, dim=1).view(1, -1).cuda()
             pred_value = torch.cat((pred_value, pred_value_temp), dim=0).cuda()
             gt_value = torch.cat((gt_value, gt_val_temp), dim=0).cuda()
@@ -124,8 +124,9 @@ class Trainer(BaseTrainer):
                     pred_wave_temp = output[0]
                 else:
                     pred_wave_temp = output
-                pred_value_temp = postprocess(pred_wave_temp.cpu().detach().numpy()[0, :], fps=fps, length=wave_length)
-                pred_value_temp = pred_value_temp.cuda()
+                pred_value_temp = postprocess(pred_wave_temp.cpu().detach().numpy()[0, :], fps=float(fps),
+                                               length=wave_length, method='dft')
+                pred_value_temp = torch.tensor([pred_value_temp]).unsqueeze(dim=0).cuda()
                 gt_val_temp = torch.mean(value, dim=1).view(1, -1).cuda()
                 pred_value = torch.cat((pred_value, pred_value_temp), dim=0).cuda()
                 gt_value = torch.cat((gt_value, gt_val_temp), dim=0).cuda()

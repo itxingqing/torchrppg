@@ -41,6 +41,16 @@ def mae(hr, hr_gt):
     mae /=len(hr_gt)
     return mae
 
+def xcorr(x):
+    length = len(x)
+    R = []
+    for m in range(0, length):
+        sums = 0.0
+        for n in range(0, length-m):
+            sums = sums + x[n] * x[n+m]
+        R.append(sums/length)
+    return R
+
 
 def img_process(img):
     vidLxL = img_as_float(img[:, :, :])  # img_as_float是将图像除以255,变为float型
@@ -181,6 +191,40 @@ def postprocess(ouput, fps, length=240, method='peakdetection'):
     elif method == 'peakdetection':
         wd, m = heartpy.process(ouput, sample_rate=fps, clean_rr=True)
         hr = m['bpm']
+    elif method == 'music':
+        # https://blog.csdn.net/qq_44628230/article/details/107013924
+        R = xcorr(ouput)
+        Rx = scipy.linalg.toeplitz(R)
+        w, v = np.linalg.eig(Rx)
+        v = np.mat(v)
+        vh = v.H
+        P = []
+        N = len(ouput)
+        for index in range(0, N+1):
+            ew = []
+            w = index/N*np.pi
+            for k in range(0, N):
+                item = complex(np.cos(k*w), np.sin(k*w))
+                ew.append(item)
+            ew = np.mat(ew)
+            ew = ew.T
+            eHw = ew.H
+            sums = 0
+            sums = np.mat(sums)
+            for j in range(3, N+1):
+                sums = sums + v[:, j-1]*vh[j-1, :]
+            fenzi = eHw*sums*ew
+            P.append(abs(1/fenzi[0, 0]))
+        f = np.linspace(0, N, N+1)/(2*N)
+        # plt.title("power spectrum")
+        # plt.plot(f, P)
+        # plt.xlabel('f')
+        # plt.ylabel('P')
+        # plt.show()
+        bottom = int(0.75*0.5/(fps/2)*(2*N))
+        top = int(2.5*0.5/(fps/2)*(2*N))
+        f = (np.argmax(P[bottom:top]) + bottom) / (2*N)
+        hr = f * fps * 60
     else:
         raise ValueError('method not understood! Needs to be either \'peakdetection\' or \'dft\', passed: %s' % method)
     return hr

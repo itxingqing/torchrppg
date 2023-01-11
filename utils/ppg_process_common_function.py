@@ -226,7 +226,8 @@ def postprocess(ouput, fps, length=240, method='peakdetection'):
         f = (np.argmax(P[bottom:top]) + bottom) / (2*N)
         hr = f * fps * 60
     else:
-        raise ValueError('method not understood! Needs to be either \'peakdetection\' or \'dft\', passed: %s' % method)
+        raise ValueError('method not understood! Needs to be either '
+                         '\'peakdetection\', \'dft\' or \'music\' passed: %s' % method)
     return hr
 
 

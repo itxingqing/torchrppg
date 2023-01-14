@@ -376,12 +376,12 @@ class ViT_ST_ST_Compact3_TDC_gra_sharp(nn.Module):
         
         rPPG = rPPG.squeeze(1)
         
-        return rPPG, Score1, Score2, Score3
+        return rPPG
 
 if __name__ == '__main__':
     model = ViT_ST_ST_Compact3_TDC_gra_sharp(image_size=(160,128,128), patches=(4,4,4), dim=96, ff_dim=144, num_heads=4, num_layers=12, dropout_rate=0.1, theta=0.7)
     x = torch.randn((4, 160, 3, 128, 128))
-    rPPG, Score1, Score2, Score3 = model(x, 2.0)
+    rPPG = model(x, 2.0)
     print(rPPG.size())
 
 

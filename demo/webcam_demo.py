@@ -139,7 +139,7 @@ def main():
 
     # 0. set path
     video_path = '0'
-    rppg_model_path = '/media/pxierra/4ddb33c4-42d9-4544-b7b4-796994f061ce/xiongzhuang/1-PycharmProjects/torchrppg/saved/models/RPPG_PhysNetUpsample_UBFC_PhysFormerLoss/0109_142313/model_best.pth'
+    rppg_model_path = 'PhysNet_with_ubfc_physformerloss.pth'
 
     # 1. build tracker
     face_tracker = cv2.TrackerKCF_create()

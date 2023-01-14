@@ -3,6 +3,7 @@ import torch
 import os
 from models.model import PhysNetUpsample, TDMNet, N3DED128, N3DED64, N3DED32, N3DED16, N3DED8, ViT_ST_ST_Compact3_TDC_gra_sharp, PhysNet_padding_ED_peak
 from ppg_process_common_function import evaluation, mae, sd, rmse, pearson
+from util import load_model
 
 if __name__ == '__main__':
     fps = 30
@@ -11,11 +12,8 @@ if __name__ == '__main__':
     # evalution
     print("Start eval ... ")
     # load model
-    model = ViT_ST_ST_Compact3_TDC_gra_sharp(patches=4, image_h=128, image_w=128, frame=240, dim=96, ff_dim=144,
-                                             num_heads=4, num_layers=12, dropout_rate=0.1, theta=0.7)
-    model = model.cuda()
-    checkpoint = torch.load(model_path)
-    model.load_state_dict(checkpoint['state_dict'])
+    model = PhysNetUpsample()
+    model = load_model(model, model_path)
     model.eval()
     # load data
     data_list = os.listdir(val_pth_dir)

@@ -231,23 +231,6 @@ def postprocess(ouput, fps, length=240, method='peakdetection'):
     return hr
 
 
-# def postprocess_method2(ouput: torch.Tensor, fps, length=240):
-#     # cal HR use ButterFilt and FouierTransfrom
-#     # ButterFilt
-#     with torch.no_grad():
-#         if type(fps) != int:
-#             fps = fps.cpu()
-#         ouput_wave = ouput[0,].cpu().detach().numpy()
-#         signal_filtered = bpfilter64(ouput_wave, fps)
-#         signal_filtered = (signal_filtered - np.mean(signal_filtered)) / np.std(signal_filtered)
-#
-#         signal_filtered = scipy.signal.welch(signal_filtered, )
-#             hr_predict = hr
-#             hr_predict = torch.tensor([hr_predict])
-#             hr_predict = hr_predict.view(1, -1)
-#     return hr_predict
-
-
 def evaluation(model, path, length=240, visualize=False, method='peakdetection'):
     data = torch.load(path)
     input = data['face']

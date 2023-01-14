@@ -1,26 +1,16 @@
 {
-    "name": "RPPG_PhysTransformer_VIPL_PhysFormerLoss",
+    "name": "RPPG_PhysNetUpsample_UBFC_PhysFormerLoss",
     "n_gpu": 1,
 
     "arch": {
-        "type": "ViT_ST_ST_Compact3_TDC_gra_sharp",
+        "type": "PhysNetUpsample",
         "args": {
-            "patches": 4,
-            "image_h": 128,
-            "image_w": 128,
-            "frame": 160,
-            "dim": 96,
-            "ff_dim": 144,
-            "num_heads": 4,
-            "num_layers": 12,
-            "dropout_rate": 0.1,
-            "theta": 0.7
         }
     },
     "train_dataloader": {
         "type": "UBFCDataloader",
         "args":{
-            "data_dir": "/media/pxierra/e70ff8ce-d5d4-4f52-aa2b-921ff250e5fc/VIPL_PTH/train",
+            "data_dir": "/media/pxierra/e70ff8ce-d5d4-4f52-aa2b-921ff250e5fc/UBFC_PTH/train",
             "batch_size": 1,
             "shuffle": true,
             "num_workers": 4,
@@ -30,7 +20,7 @@
     "val_dataloader": {
         "type": "UBFCDataloader",
         "args":{
-            "data_dir": "/media/pxierra/e70ff8ce-d5d4-4f52-aa2b-921ff250e5fc/VIPL_PTH/val",
+            "data_dir": "/media/pxierra/e70ff8ce-d5d4-4f52-aa2b-921ff250e5fc/UBFC_PTH/val",
             "batch_size": 1,
             "shuffle": true,
             "num_workers": 4,

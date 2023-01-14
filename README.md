@@ -29,3 +29,7 @@ $ python train.py
 $ python utils/ubfc_evaluation.py
 ```
 
+# 4. How to run with webcam?
+```
+$ python demo/webcam_demo.py
+```

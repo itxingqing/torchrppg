@@ -14,7 +14,8 @@
             "batch_size": 1,
             "shuffle": true,
             "num_workers": 4,
-            "drop_last": true
+            "drop_last": true,
+            "diff_flag": false
         }
     },
     "val_dataloader": {
@@ -24,7 +25,8 @@
             "batch_size": 1,
             "shuffle": true,
             "num_workers": 4,
-            "drop_last": true
+            "drop_last": true,
+            "diff_flag": false
         }
     },
     "optimizer1": {
@@ -61,7 +63,7 @@
         "epochs": 200,
 
         "save_dir": "saved/",
-        "save_period": 5,
+        "save_period": 1,
         "verbosity": 2,
 
         "monitor": "min val_loss",

@@ -3,6 +3,7 @@ import os
 
 import scipy.signal
 from scipy.signal import butter, filtfilt, detrend
+from scipy.sparse import spdiags
 from scipy import  signal
 import numpy as np
 import torch
@@ -90,6 +91,22 @@ def bpfilter64(s2, fs):
     bpfilter = scipy.signal.firwin(firl_len, [minfq, maxfq], pass_zero='bandpass')
     s2f = scipy.signal.filtfilt(bpfilter, 1, s2)
     return s2f
+
+
+# https://github.com/ubicomplab/rPPG-Toolbox/blob/126547e9231e5d94ccbba7fb6eb8b5009b7a94fb/eval/post_process.py#L17
+def mydetrend(input_signal, lambda_value):
+    signal_length = input_signal.shape[0]
+    # observation matrix
+    H = np.identity(signal_length)
+    ones = np.ones(signal_length)
+    minus_twos = -2 * np.ones(signal_length)
+    diags_data = np.array([ones, minus_twos, ones])
+    diags_index = np.array([0, 1, 2])
+    D = spdiags(diags_data, diags_index,
+                (signal_length - 2), signal_length).toarray()
+    filtered_signal = np.dot(
+        (H - np.linalg.inv(H + (lambda_value ** 2) * np.dot(D.T, D))), input_signal)
+    return filtered_signal
 
 
 def process_pipe(data, view=False, output="", name="", fs=30):
@@ -231,7 +248,7 @@ def postprocess(ouput, fps, length=240, method='peakdetection'):
     return hr
 
 
-def evaluation(model, path, length=240, visualize=False, method='peakdetection'):
+def evaluation(model, path, length=240, visualize=False, diff_flag=False, method='peakdetection'):
     data = torch.load(path)
     input = data['face']
     input = input[:, 0:length, :, :]
@@ -252,6 +269,8 @@ def evaluation(model, path, length=240, visualize=False, method='peakdetection')
     hr_predict = postprocess(wave_predict, fps=fps, length=length, method=method)
     hr_predict_from_wave_gt = postprocess(gt[0, ].cpu().detach().numpy(), fps=fps, length=length, method=method)
     wave_gt = gt[0, ].cpu().detach().numpy()
+    if diff_flag:
+        wave_predict = mydetrend(np.cumsum(wave_predict), 100)
     if visualize:
         fig = plt.figure(1)
         plt.plot(wave_predict, '-')
@@ -261,3 +280,4 @@ def evaluation(model, path, length=240, visualize=False, method='peakdetection')
         plt.close(fig)
 
     return hr_predict, hr_gt, wave_predict, wave_gt
+

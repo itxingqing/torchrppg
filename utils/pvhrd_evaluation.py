@@ -8,11 +8,14 @@ from util import load_model
 
 if __name__ == '__main__':
     fps = 30
+    diff_flag = False
     # evalution
     model_path = '/media/pxierra/4ddb33c4-42d9-4544-b7b4-796994f061ce/xiongzhuang/1-PycharmProjects/rppg_tdm_talos/saved/models/RPPG_TDMNet_UBFC_MSELoss/0929_155543/model_best.pth'
     val_pth_dir = "/media/pxierra/e70ff8ce-d5d4-4f52-aa2b-921ff250e5fc/P-VHRD-PTH/val"
     # load model
     model = PhysNetUpsample()
+    if model._get_name() == 'EfficientPhys_Conv':
+        diff_flag = True
     model = load_model(model, model_path)
     # load data
     data_list = os.listdir(val_pth_dir)
@@ -22,7 +25,7 @@ if __name__ == '__main__':
     for data_path in data_list:
         path = os.path.join(val_pth_dir, data_path)
         scence = data_path.split('_')[0][-2:]
-        hr_predict, hr_gt, wave_predict, wave_gt = evaluation(model, path, length=240, visualize=False)
+        hr_predict, hr_gt, wave_predict, wave_gt = evaluation(model, path, length=240, diff_flag=diff_flag, visualize=False)
         pearson_value = pearson(wave_predict, wave_gt)
         print("scence: ", scence, "hr predict: ", hr_predict, "hr gt: ", hr_gt)
         hr_predict_dict[f'{scence}'].append(hr_predict)

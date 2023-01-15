@@ -27,6 +27,7 @@ class Trainer(BaseTrainer):
         self.do_validation = self.valid_data_loader is not None
         self.lr_scheduler = lr_scheduler
         self.log_step = int(np.sqrt(data_loader.batch_size))
+        self.diff_flag = data_loader.diff_flag
 
         self.train_metrics = MetricTracker('loss', *[m.__name__ for m in self.metric_ftns], writer=self.writer)
         self.valid_metrics = MetricTracker('loss', *[m.__name__ for m in self.metric_ftns], writer=self.writer)
@@ -58,6 +59,8 @@ class Trainer(BaseTrainer):
                 pred_wave_temp = output[0]
             else:
                 pred_wave_temp = output
+            if self.diff_flag:
+                pred_wave_temp = torch.cumsum(pred_wave_temp, dim=1)
             pred_value_temp = postprocess(pred_wave_temp.cpu().detach().numpy()[0, :], fps=float(fps), length=wave_length, method='dft')
             pred_value_temp = torch.tensor([pred_value_temp]).unsqueeze(dim=0).cuda()
             gt_val_temp = torch.mean(value, dim=1).view(1, -1).cuda()
@@ -124,6 +127,8 @@ class Trainer(BaseTrainer):
                     pred_wave_temp = output[0]
                 else:
                     pred_wave_temp = output
+                if self.diff_flag:
+                    pred_wave_temp = torch.cumsum(pred_wave_temp, dim=1)
                 pred_value_temp = postprocess(pred_wave_temp.cpu().detach().numpy()[0, :], fps=float(fps),
                                                length=wave_length, method='dft')
                 pred_value_temp = torch.tensor([pred_value_temp]).unsqueeze(dim=0).cuda()

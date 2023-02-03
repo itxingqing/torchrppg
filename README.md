@@ -31,6 +31,6 @@ $ python utils/ubfc_evaluation.py
 
 # 4. How to run with webcam?
 ```
-cd deploy
+$ cd deploy
 $ python demo/webcam_demo.py
 ```

@@ -134,6 +134,49 @@ class EfficientPhys_Conv(nn.Module):
 
         return out
 
+    def forward_deploy(self, inputs, params=None):
+        B, C, T, H, W = inputs.size()
+        inputs = torch.permute(inputs, (0, 2, 1, 3, 4))
+        inputs = torch.reshape(inputs, (B*T, C, H, W))
+        last_frame = inputs[-1, :, :, :].unsqueeze(0)
+        inputs = torch.cat([inputs, last_frame], dim=0)
+        inputs = inputs[1:, :, :, :] - inputs[:-1, :, :, :]
+        print(inputs.shape)
+        # if self.channel == 'raw':
+        #     inputs = torch.diff(inputs, dim=0)
+        inputs = self.batch_norm(inputs)
+        network_input = self.TSM_1(inputs)
+        d1 = torch.tanh(self.motion_conv1(network_input))
+        d1 = self.TSM_2(d1)
+        d2 = torch.tanh(self.motion_conv2(d1))
+
+
+        g1 = torch.sigmoid(self.apperance_att_conv1(d2))
+        g1 = self.attn_mask_1(g1)
+        gated1 = d2 * g1
+
+        d3 = self.avg_pooling_1(gated1)
+        d4 = self.dropout_1(d3)
+
+        d4 = self.TSM_3(d4)
+        d5 = torch.tanh(self.motion_conv3(d4))
+        d5 = self.TSM_4(d5)
+        d6 = torch.tanh(self.motion_conv4(d5))
+
+        g2 = torch.sigmoid(self.apperance_att_conv2(d6))
+        g2 = self.attn_mask_2(g2)
+        gated2 = d6 * g2
+
+        d7 = self.avg_pooling_3(gated2)
+        d8 = self.dropout_3(d7)
+        d9 = d8.view(d8.size(0), -1)
+        d10 = torch.tanh(self.final_dense_1(d9))
+        d11 = self.dropout_4(d10)
+        out = self.final_dense_2(d11)
+        out = torch.transpose(out, 0, 1)
+
+        return out
+
 
 if __name__ == '__main__':
     model = EfficientPhys_Conv()

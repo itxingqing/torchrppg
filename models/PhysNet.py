@@ -1,6 +1,9 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import random
+import numpy as np
+import os
 
 
 # -------------------------------------------------------------------------------------------------------------------
@@ -84,6 +87,11 @@ class PhysNetUpsample(nn.Module):
             nn.Conv3d(in_channels=model_channels, out_channels=1, kernel_size=(1, 1, 1), stride=1, padding=(0, 0, 0))
         )
 
+        self.end_deploy = nn.Sequential(
+            nn.AvgPool3d(kernel_size=(1, 8, 8), stride=(1, 1, 1), padding=0),
+            nn.Conv3d(in_channels=model_channels, out_channels=1, kernel_size=(1, 1, 1), stride=1, padding=(0, 0, 0))
+        )
+
     def forward(self, x):
         B, C, T, H, W = x.size()
         # x_mean = torch.mean(x, dim=(2, 3, 4), keepdim=True)
@@ -108,3 +116,34 @@ class PhysNetUpsample(nn.Module):
         x = x.view(-1, T)
 
         return x
+
+    def forward_deploy(self, x):
+        # B, C, T, H, W = x.size()
+        # x_mean = torch.mean(x, dim=(2, 3, 4), keepdim=True)
+        # x_std = torch.std(x, dim=(2, 3, 4), keepdim=True)
+        # x = (x - x_mean) / x_std
+        # parity = []
+        x = self.start(x)
+        x = self.loop1(x)
+        # parity.append(x.size(2) % 2)
+        x = self.encoder1(x)
+        # parity.append(x.size(2) % 2)
+        x = self.encoder2(x)
+        x = self.loop4(x)
+
+        x = F.interpolate(x, scale_factor=(2, 1, 1))
+        x = self.decoder1(x)
+        # x = F.pad(x, (0, 0, 0, 0, 0, 0), mode='replicate')
+        x = F.interpolate(x, scale_factor=(2, 1, 1))
+        x = self.decoder2(x)
+        # x = F.pad(x, (0, 0, 0, 0, 0, 0), mode='replicate')
+        x = self.end_deploy(x)
+        x = x.view(-1, 240)
+
+        return x
+
+if __name__ == '__main__':
+    model = PhysNetUpsample()
+    x = torch.randn((1, 3, 240, 36, 36))
+    rPPG = model(x)
+    print(rPPG.shape)
